@@ -23,8 +23,8 @@ classifiers = [
 [project.urls]
 Homepage = "https://trybackloop.com"
 Specification = "https://trybackloop.com/spec/"
-Repository = "https://github.com/guimsh/agent-feedback-protocol"
-Issues = "https://github.com/guimsh/agent-feedback-protocol/issues"
+Repository = "https://github.com/backloophq/agent-feedback-protocol"
+Issues = "https://github.com/backloophq/agent-feedback-protocol/issues"
 
 [project.optional-dependencies]
 fastapi = ["fastapi>=0.100"]

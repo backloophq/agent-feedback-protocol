@@ -6,10 +6,10 @@
   "homepage": "https://trybackloop.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/guimsh/agent-feedback-protocol.git",
+    "url": "git+https://github.com/backloophq/agent-feedback-protocol.git",
     "directory": "packages/mcp"
   },
-  "bugs": "https://github.com/guimsh/agent-feedback-protocol/issues",
+  "bugs": "https://github.com/backloophq/agent-feedback-protocol/issues",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -3,7 +3,7 @@
 Python SDK for the [Agent Feedback Protocol](https://trybackloop.com/spec/): AI agents `POST` structured feedback to `/feedback` on the services they use, so those services learn what agents were trying to do when they got stuck.
 
 - Standard library only (Python 3.9+). Optional FastAPI and Flask helpers.
-- Validates against the protocol's [JSON Schemas](https://github.com/guimsh/agent-feedback-protocol/tree/main/spec).
+- Validates against the protocol's [JSON Schemas](https://github.com/backloophq/agent-feedback-protocol/tree/main/spec).
 - Mirrors the TypeScript SDK (`@backloop/sdk`): same validation messages, error codes and redaction.
 
 ```sh
