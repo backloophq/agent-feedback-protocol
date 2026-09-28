@@ -1,0 +1,8 @@
+{
+  "description": "goal is required",
+  "expect_error_path": "goal",
+  "submission": {
+    "type": "bug",
+    "message": "m"
+  }
+}

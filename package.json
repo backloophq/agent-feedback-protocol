@@ -1,0 +1,31 @@
+{
+  "name": "agent-feedback-protocol",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Agent Feedback Protocol — an open protocol that lets APIs improve from agent feedback.",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter './packages/*' run build",
+    "typecheck": "pnpm -r --filter './packages/*' run typecheck",
+    "test": "vitest run && pnpm run test:py",
+    "test:ts": "vitest run",
+    "test:py": "cd packages/sdk-python && python3 -m unittest discover -s tests -t .",
+    "sync-schema": "node scripts/sync-schema.mjs",
+    "demo:collector": "node --env-file-if-exists=.env packages/collector/dist/cli.js",
+    "demo:api": "node --env-file-if-exists=.env examples/acme-api/src/server.js",
+    "demo:agents": "node --env-file-if-exists=.env --import tsx examples/agent-fleet/src/simulate.ts",
+    "demo:claude-agent": "node --env-file-if-exists=.env --import tsx examples/agent-fleet/src/claude-agent.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

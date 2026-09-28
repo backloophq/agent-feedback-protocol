@@ -1,0 +1,37 @@
+{
+  "description": "Every field populated",
+  "submission": {
+    "spec_version": "0.1",
+    "type": "unhelpful_error",
+    "goal": "Export all contacts created last week to the user's CRM",
+    "message": "POST /contacts/export returned 400 with body {\"error\":\"bad request\"} and no hint about which field was wrong",
+    "endpoint": "/contacts/export",
+    "method": "POST",
+    "outcome": "degraded",
+    "workaround": true,
+    "workaround_description": "Bisected the filter object until the request succeeded; created_after must be a date, not a datetime",
+    "expected": "An error naming the invalid field and the accepted format",
+    "suggestion": "Return {\"error\":{\"field\":\"created_after\",\"expected\":\"YYYY-MM-DD\"}}",
+    "request_id": "req_8f2c1a",
+    "session_id": "sess_42",
+    "agent": {
+      "name": "crm-sync-agent",
+      "version": "1.4.0",
+      "model": "claude-opus-5",
+      "framework": "claude-agent-sdk"
+    },
+    "evidence": {
+      "status_code": 400,
+      "request": {
+        "filter": {
+          "created_after": "2026-09-21T00:00:00Z"
+        }
+      },
+      "response_excerpt": "{\"error\":\"bad request\"}"
+    },
+    "metadata": {
+      "retries": 3,
+      "locale": "en-GB"
+    }
+  }
+}

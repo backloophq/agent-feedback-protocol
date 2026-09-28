@@ -1,0 +1,10 @@
+{
+  "description": "method must be an HTTP method",
+  "expect_error_path": "method",
+  "submission": {
+    "type": "bug",
+    "goal": "g",
+    "message": "m",
+    "method": "FETCH"
+  }
+}

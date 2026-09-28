@@ -1,0 +1,39 @@
+{
+  "name": "@backloop/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for the Agent Feedback Protocol: validate, send and receive structured feedback from AI agents.",
+  "license": "Apache-2.0",
+  "homepage": "https://trybackloop.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guimsh/agent-feedback-protocol.git",
+    "directory": "packages/sdk"
+  },
+  "bugs": "https://github.com/guimsh/agent-feedback-protocol/issues",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js"
+    }
+  },
+  "files": ["dist", "src"],
+  "keywords": ["ai-agents", "feedback", "api", "mcp", "llm", "agent-feedback-protocol"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

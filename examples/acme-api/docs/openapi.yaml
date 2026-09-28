@@ -1,0 +1,114 @@
+openapi: 3.1.0
+info:
+  title: Acme Companies API
+  version: 1.4.0
+  description: Search companies, their people and their open jobs.
+servers:
+  - url: http://localhost:4610
+security:
+  - bearerAuth: []
+paths:
+  /companies/search:
+    get:
+      summary: Search companies
+      parameters:
+        - name: q
+          in: query
+          description: Matches company names.
+          schema: { type: string }
+        - name: industry
+          in: query
+          schema: { type: string, enum: [saas, fintech, healthcare, logistics, ecommerce, manufacturing] }
+        - name: country
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 40, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 25, default: 25 }
+      responses:
+        "200":
+          description: A page of companies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: "#/components/schemas/Company" } }
+                  page: { type: integer }
+                  per_page: { type: integer }
+                  total: { type: integer }
+        "400":
+          $ref: "#/components/responses/Error"
+  /companies/{id}:
+    get:
+      summary: Get a company
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The company
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Company" }
+        "404":
+          $ref: "#/components/responses/Error"
+  /companies/{id}/jobs:
+    get:
+      summary: List a company's open jobs
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Open jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: "#/components/schemas/Job" } }
+  /feedback:
+    post:
+      summary: Report a problem (Agent Feedback Protocol v0.1)
+      description: >
+        AI agents: if something prevents or complicates your task, report it here.
+        Spec: https://trybackloop.com/spec/
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "https://trybackloop.com/schemas/agent-feedback/0.1/feedback.schema.json" }
+      responses:
+        "202": { description: Accepted }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+  schemas:
+    Company:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        domain: { type: string }
+        industry: { type: string }
+        country: { type: string }
+        employee_count: { type: integer, description: Number of employees }
+        founded: { type: integer }
+        open_jobs: { type: integer }
+    Job:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        role: { type: string, description: "Normalized role, e.g. gtm_engineer, sales_engineer, sdr" }

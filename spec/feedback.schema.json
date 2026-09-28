@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trybackloop.com/schemas/agent-feedback/0.1/feedback.schema.json",
+  "title": "Agent Feedback Submission",
+  "description": "Structured feedback an AI agent sends to a service when something prevents or complicates its task. Agent Feedback Protocol v0.1.",
+  "type": "object",
+  "required": ["type", "goal", "message"],
+  "additionalProperties": false,
+  "properties": {
+    "spec_version": {
+      "description": "Protocol version the agent is speaking. Defaults to \"0.1\" when omitted.",
+      "type": "string",
+      "const": "0.1"
+    },
+    "type": {
+      "description": "Category of the problem.",
+      "type": "string",
+      "enum": [
+        "missing_capability",
+        "bug",
+        "unclear_documentation",
+        "unexpected_response",
+        "unhelpful_error",
+        "performance",
+        "other"
+      ]
+    },
+    "goal": {
+      "description": "What the agent (or its user) was trying to accomplish, in plain language. Describe the task, not the API call.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "message": {
+      "description": "What prevented or complicated the task.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "endpoint": {
+      "description": "The operation involved: an HTTP path template (\"/companies/search\") or a tool name (\"search_companies\").",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "method": {
+      "description": "HTTP method, when the endpoint is an HTTP path.",
+      "type": "string",
+      "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
+    },
+    "outcome": {
+      "description": "What happened to the task. blocked: the task could not be completed. degraded: completed, but worse or slower than it should have been. completed: completed fine; the feedback is a suggestion.",
+      "type": "string",
+      "enum": ["blocked", "degraded", "completed"]
+    },
+    "workaround": {
+      "description": "Whether the agent found a workaround.",
+      "type": "boolean"
+    },
+    "workaround_description": {
+      "description": "The workaround the agent used, if any.",
+      "type": "string",
+      "maxLength": 2000
+    },
+    "expected": {
+      "description": "What the agent expected to find or happen.",
+      "type": "string",
+      "maxLength": 2000
+    },
+    "suggestion": {
+      "description": "A concrete change that would have let the agent succeed.",
+      "type": "string",
+      "maxLength": 2000
+    },
+    "request_id": {
+      "description": "The service's request ID for a related call, to join feedback with logs.",
+      "type": "string",
+      "maxLength": 256
+    },
+    "session_id": {
+      "description": "Opaque ID shared by all feedback from one agent task run. Used to de-duplicate retries.",
+      "type": "string",
+      "maxLength": 256
+    },
+    "agent": {
+      "description": "Self-reported information about the agent.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "maxLength": 128 },
+        "version": { "type": "string", "maxLength": 64 },
+        "model": { "type": "string", "maxLength": 128 },
+        "framework": { "type": "string", "maxLength": 128 }
+      }
+    },
+    "evidence": {
+      "description": "Sanitized details of the failing interaction. Never include credentials or personal data.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status_code": { "type": "integer", "minimum": 100, "maximum": 599 },
+        "request": {
+          "description": "Parameters or body the agent sent, with secrets removed.",
+          "type": "object"
+        },
+        "response_excerpt": {
+          "description": "The relevant part of the response.",
+          "type": "string",
+          "maxLength": 4000
+        }
+      }
+    },
+    "metadata": {
+      "description": "Free-form extra data. Services may ignore it.",
+      "type": "object"
+    }
+  }
+}

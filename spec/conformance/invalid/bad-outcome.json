@@ -1,0 +1,10 @@
+{
+  "description": "outcome must be a known value",
+  "expect_error_path": "outcome",
+  "submission": {
+    "type": "bug",
+    "goal": "g",
+    "message": "m",
+    "outcome": "failed"
+  }
+}

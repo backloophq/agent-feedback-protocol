@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trybackloop.com/schemas/agent-feedback/0.1/record.schema.json",
+  "title": "Agent Feedback Record",
+  "description": "A feedback submission after the receiving service has accepted it: the agent's submission plus server-side context. This is what services store and forward to collectors.",
+  "type": "object",
+  "required": ["id", "received_at", "feedback"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "description": "Unique ID assigned by the receiving service.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "received_at": {
+      "description": "RFC 3339 timestamp of when the service accepted the submission.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "service": {
+      "description": "Name of the service that received the feedback.",
+      "type": "string",
+      "maxLength": 128
+    },
+    "account": {
+      "description": "Opaque, stable identifier of the customer account the agent authenticated as. Services should hash or pseudonymize it.",
+      "type": "string",
+      "maxLength": 256
+    },
+    "source": {
+      "description": "Channel the feedback arrived through.",
+      "type": "string",
+      "enum": ["http", "mcp", "sdk", "other"]
+    },
+    "feedback": {
+      "$ref": "feedback.schema.json"
+    }
+  }
+}

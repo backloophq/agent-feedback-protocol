@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trybackloop.com/schemas/agent-feedback/0.1/ack.schema.json",
+  "title": "Agent Feedback Acknowledgement",
+  "description": "Body of a 202 response to POST /feedback.",
+  "type": "object",
+  "required": ["id", "status", "received_at"],
+  "properties": {
+    "id": { "type": "string" },
+    "status": { "type": "string", "const": "accepted" },
+    "received_at": { "type": "string", "format": "date-time" },
+    "known_issue": {
+      "description": "Present when the service already tracks this problem. Agents can use it to stop retrying or to apply a known workaround.",
+      "type": "object",
+      "required": ["id", "title", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["acknowledged", "planned", "in_progress", "fixed", "wont_fix"]
+        },
+        "url": { "type": "string" },
+        "workaround": { "type": "string" }
+      }
+    }
+  }
+}

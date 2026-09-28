@@ -1,0 +1,8 @@
+{
+  "description": "Only the required fields",
+  "submission": {
+    "type": "missing_capability",
+    "goal": "Find companies currently hiring GTM engineers",
+    "message": "No hiring-role filter is available"
+  }
+}

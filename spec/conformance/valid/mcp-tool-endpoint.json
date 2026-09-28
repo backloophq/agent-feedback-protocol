@@ -1,0 +1,10 @@
+{
+  "description": "Endpoint given as an MCP tool name",
+  "submission": {
+    "type": "unclear_documentation",
+    "goal": "Book a meeting room for 12 people tomorrow",
+    "endpoint": "book_room",
+    "message": "The tool description does not say whether capacity counts the organiser",
+    "outcome": "completed"
+  }
+}

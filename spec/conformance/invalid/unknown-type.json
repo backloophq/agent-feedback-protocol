@@ -1,0 +1,9 @@
+{
+  "description": "type must be a known value",
+  "expect_error_path": "type",
+  "submission": {
+    "type": "feature_request",
+    "goal": "g",
+    "message": "m"
+  }
+}

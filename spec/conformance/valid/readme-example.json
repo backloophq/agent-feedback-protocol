@@ -1,0 +1,10 @@
+{
+  "description": "The example from the project README",
+  "submission": {
+    "type": "missing_capability",
+    "goal": "Find companies currently hiring GTM engineers",
+    "endpoint": "/companies/search",
+    "message": "No hiring-role filter is available",
+    "workaround": false
+  }
+}

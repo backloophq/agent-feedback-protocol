@@ -1,0 +1,10 @@
+{
+  "description": "spec_version must be 0.1",
+  "expect_error_path": "spec_version",
+  "submission": {
+    "spec_version": "1.0",
+    "type": "bug",
+    "goal": "g",
+    "message": "m"
+  }
+}

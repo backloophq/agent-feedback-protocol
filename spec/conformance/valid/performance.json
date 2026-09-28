@@ -1,0 +1,14 @@
+{
+  "description": "Performance report with a status code",
+  "submission": {
+    "type": "performance",
+    "goal": "Summarise every support ticket from Q3",
+    "message": "Pagination is capped at 20 items per page and rate limited to 1 request per second; the task takes 40 minutes",
+    "endpoint": "/tickets",
+    "method": "GET",
+    "outcome": "degraded",
+    "evidence": {
+      "status_code": 429
+    }
+  }
+}

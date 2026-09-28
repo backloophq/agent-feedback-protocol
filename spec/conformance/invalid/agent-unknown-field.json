@@ -1,0 +1,13 @@
+{
+  "description": "agent does not allow unknown fields",
+  "expect_error_path": "agent.api_key",
+  "submission": {
+    "type": "bug",
+    "goal": "g",
+    "message": "m",
+    "agent": {
+      "name": "a",
+      "api_key": "sk-123"
+    }
+  }
+}

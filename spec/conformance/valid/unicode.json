@@ -1,0 +1,9 @@
+{
+  "description": "Non-ASCII text",
+  "submission": {
+    "type": "bug",
+    "goal": "Trouver les entreprises à Zürich",
+    "message": "La recherche échoue avec « ü » dans le nom de ville — 0 résultats",
+    "endpoint": "/companies/search"
+  }
+}

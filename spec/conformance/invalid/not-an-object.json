@@ -1,0 +1,8 @@
+{
+  "description": "the submission must be an object",
+  "expect_error_path": "",
+  "submission": [
+    "type",
+    "bug"
+  ]
+}

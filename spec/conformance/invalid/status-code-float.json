@@ -1,0 +1,12 @@
+{
+  "description": "evidence.status_code must be an integer",
+  "expect_error_path": "evidence.status_code",
+  "submission": {
+    "type": "bug",
+    "goal": "g",
+    "message": "m",
+    "evidence": {
+      "status_code": 400.5
+    }
+  }
+}

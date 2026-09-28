@@ -1,0 +1,10 @@
+{
+  "description": "unknown top-level fields are rejected",
+  "expect_error_path": "severity",
+  "submission": {
+    "type": "bug",
+    "goal": "g",
+    "message": "m",
+    "severity": "high"
+  }
+}

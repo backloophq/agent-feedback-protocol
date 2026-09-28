@@ -1,0 +1,43 @@
+{
+  "name": "@backloop/collector",
+  "version": "0.1.0",
+  "description": "Self-hostable reference collector for the Agent Feedback Protocol. Receives, de-duplicates and stores agent feedback.",
+  "license": "Apache-2.0",
+  "homepage": "https://trybackloop.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guimsh/agent-feedback-protocol.git",
+    "directory": "packages/collector"
+  },
+  "bugs": "https://github.com/guimsh/agent-feedback-protocol/issues",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "backloop-collector": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/cli.js"
+  },
+  "dependencies": {
+    "@backloop/sdk": "workspace:*",
+    "@hono/node-server": "^2.1.1",
+    "hono": "^4.13.9"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

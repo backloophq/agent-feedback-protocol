@@ -1,0 +1,7 @@
+packages:
+  - packages/*
+  - examples/*
+
+# esbuild (via tsx and vitest) checks its platform binary on install.
+onlyBuiltDependencies:
+  - esbuild

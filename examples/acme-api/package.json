@@ -1,0 +1,16 @@
+{
+  "name": "acme-api",
+  "version": "1.4.0",
+  "private": true,
+  "description": "Demo API for Backloop: searches companies and implements the Agent Feedback Protocol.",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@backloop/sdk": "workspace:*",
+    "@hono/node-server": "^2.1.1",
+    "hono": "^4.13.9"
+  }
+}

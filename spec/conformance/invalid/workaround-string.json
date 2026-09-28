@@ -1,0 +1,10 @@
+{
+  "description": "workaround must be a boolean",
+  "expect_error_path": "workaround",
+  "submission": {
+    "type": "bug",
+    "goal": "g",
+    "message": "m",
+    "workaround": "no"
+  }
+}

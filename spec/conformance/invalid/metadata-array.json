@@ -1,0 +1,13 @@
+{
+  "description": "metadata must be an object",
+  "expect_error_path": "metadata",
+  "submission": {
+    "type": "bug",
+    "goal": "g",
+    "message": "m",
+    "metadata": [
+      1,
+      2
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "agent-fleet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Simulated and real AI agents that use the Acme Companies API and report feedback.",
+  "type": "module",
+  "scripts": {
+    "simulate": "tsx src/simulate.ts",
+    "agent": "tsx src/claude-agent.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "@backloop/sdk": "workspace:*",
+    "zod": "^4.6.5"
+  }
+}
