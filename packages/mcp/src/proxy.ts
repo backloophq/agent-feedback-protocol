@@ -35,7 +35,7 @@ function text(value: unknown, isError = false): CallToolResult {
  * with the APIs it uses.
  */
 export function createFeedbackProxyServer(options: FeedbackProxyOptions = {}): McpServer {
-  const server = new McpServer({ name: "backloop-feedback", version: "0.1.0" });
+  const server = new McpServer({ name: "backloop-feedback", version: "0.1.1" });
   const clients = new Map<string, FeedbackClient>();
 
   async function clientFor(serviceUrl?: string): Promise<FeedbackClient> {
