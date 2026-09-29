@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 from .ids import new_id
+from .redact import redact as _redact
 from .types import (
     DEFAULT_MAX_BYTES,
     FEEDBACK_TYPES,
@@ -93,6 +94,9 @@ class FeedbackHandler:
       account behind a framework request; used by the integrations.
     - ``rate_limit`` is ``(max, window_seconds)`` per account (or per IP), or
       None to disable it.
+    - ``redact`` removes secrets, card numbers and email addresses from what
+      agents send, before ``on_record`` sees it. True (default), False, or a
+      dict of ``redact()`` options. Not every agent uses a client that does.
     """
 
     def __init__(
@@ -106,6 +110,7 @@ class FeedbackHandler:
         public_endpoint: Optional[str] = None,
         rate_limit: Optional[Tuple[int, float]] = (60, 60.0),
         source: FeedbackSource = "http",
+        redact: Union[bool, Mapping[str, Any]] = True,
         generate_id: Optional[Callable[[], str]] = None,
         now: Optional[Callable[[], datetime]] = None,
     ) -> None:
@@ -118,6 +123,7 @@ class FeedbackHandler:
         self.max_bytes = max_bytes
         self.public_endpoint = public_endpoint
         self.source = source
+        self.redact = redact
         self._limiter = _RateLimiter(*rate_limit) if rate_limit else None
         self._generate_id = generate_id or (lambda: new_id("fb"))
         self._now = now or (lambda: datetime.now(timezone.utc))
@@ -163,6 +169,8 @@ class FeedbackHandler:
         if account:
             record["account"] = account
         record["source"] = self.source or "http"
+        if self.redact is not False:
+            parsed = _redact(parsed, **(self.redact if isinstance(self.redact, Mapping) else {}))
         record["feedback"] = parsed
 
         try:

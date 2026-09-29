@@ -43,6 +43,17 @@ describe("server handler", () => {
     expect(sink.records[0]).toMatchObject({ id: ack.id, service: "acme", account: "acct_1", source: "http", feedback: valid });
   });
 
+  it("removes secrets and email addresses, whatever client sent them", async () => {
+    const leaky = { ...valid, message: "401 with Bearer 9f8e7d6c5b4a3f2e for jane@acme.test", metadata: { password: "hunter2", plan: "team" } };
+    const { handler, sink } = setup();
+    expect((await handler.fetch(post(leaky))).status).toBe(202);
+    expect(sink.records[0]!.feedback).toMatchObject({ message: "401 with [REDACTED] for [REDACTED]", metadata: { password: "[REDACTED]", plan: "team" } });
+    // Asked not to: as sent.
+    const raw = setup({ redact: false });
+    await raw.handler.fetch(post(leaky));
+    expect(raw.sink.records[0]!.feedback).toMatchObject({ message: leaky.message });
+  });
+
   it("passes a known issue from onRecord back to the agent", async () => {
     const known_issue = { id: "iss_1", title: "Add hiring_role filter", status: "planned" as const, workaround: "Use /jobs" };
     const { handler } = setup({ onRecord: () => ({ known_issue }) });

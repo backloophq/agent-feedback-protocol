@@ -58,6 +58,15 @@ describe("registerFeedbackTool", () => {
     expect(sink.records[0]).toMatchObject({ id: ack.id, source: "mcp", service: "acme-mcp", account: "acct_mcp", feedback });
   });
 
+  it("removes secrets and email addresses from what the agent sent", async () => {
+    const sink = memorySink();
+    const server = new McpServer({ name: "acme", version: "1.0.0" });
+    registerFeedbackTool(server, { onRecord: sink });
+    const client = await connect(server);
+    await client.callTool({ name: "submit_feedback", arguments: { ...feedback, message: "401 with Bearer 9f8e7d6c5b4a3f2e for jane@acme.test" } });
+    expect(sink.records[0]!.feedback.message).toBe("401 with [REDACTED] for [REDACTED]");
+  });
+
   it("returns a tool error for invalid input instead of throwing", async () => {
     const server = new McpServer({ name: "acme", version: "1.0.0" });
     registerFeedbackTool(server, { onRecord: () => {} });

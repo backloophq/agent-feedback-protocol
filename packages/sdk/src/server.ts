@@ -1,4 +1,5 @@
 import { newId } from "./ids.js";
+import { redact, type RedactOptions } from "./redact.js";
 import {
   DEFAULT_MAX_BYTES,
   FEEDBACK_TYPES,
@@ -37,6 +38,11 @@ export interface FeedbackHandlerOptions {
   identify?: (request: Request) => string | undefined | Promise<string | undefined>;
   /** Default "optional": anonymous feedback accepted, authenticated feedback attributed. */
   auth?: AuthMode;
+  /**
+   * Remove secrets, card numbers and email addresses from what agents send, before
+   * `onRecord` sees it. Default true: not every agent uses a client that does.
+   */
+  redact?: boolean | RedactOptions;
   maxBytes?: number;
   /** Public URL of the feedback endpoint, for the discovery document. Default: derived from the request. */
   publicEndpoint?: string;
@@ -178,7 +184,7 @@ export function createFeedbackHandler(options: FeedbackHandlerOptions): Feedback
       ...(options.service ? { service: options.service } : {}),
       ...(account ? { account } : {}),
       source: options.source ?? "http",
-      feedback: result.value,
+      feedback: options.redact === false ? result.value : redact(result.value, typeof options.redact === "object" ? options.redact : {}),
     };
 
     let outcome: OnRecordResult;

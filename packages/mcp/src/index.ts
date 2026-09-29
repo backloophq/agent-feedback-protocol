@@ -6,11 +6,13 @@ import {
   FEEDBACK_TOOL_NAME,
   formatIssues,
   newId,
+  redact,
   validateSubmission,
   type FeedbackAck,
   type FeedbackRecord,
   type FeedbackSubmission,
   type OnRecordResult,
+  type RedactOptions,
 } from "@backloop/sdk";
 import { feedbackInputShape } from "./shape.js";
 
@@ -25,6 +27,8 @@ export interface RegisterFeedbackToolOptions {
   service?: string;
   /** Resolve the (pseudonymous) account behind the MCP session, e.g. from `extra.authInfo`. */
   identify?: (extra: ToolExtra) => string | undefined | Promise<string | undefined>;
+  /** Remove secrets, card numbers and email addresses from what agents send. Default true. */
+  redact?: boolean | RedactOptions;
   /** Tool name. Default `submit_feedback`. */
   name?: string;
   description?: string;
@@ -65,7 +69,7 @@ export function registerFeedbackTool(server: McpServer, options: RegisterFeedbac
         ...(options.service ? { service: options.service } : {}),
         ...(account ? { account } : {}),
         source: "mcp",
-        feedback: result.value,
+        feedback: options.redact === false ? result.value : redact(result.value, typeof options.redact === "object" ? options.redact : {}),
       };
       try {
         const outcome = await options.onRecord(record);

@@ -51,6 +51,19 @@ class HappyPathTest(unittest.TestCase):
             [{"id": "fb_test", "received_at": "2026-09-28T10:04:11.123Z", "source": "http", "feedback": SUBMISSION}],
         )
 
+    def test_removes_secrets_and_emails_whatever_client_sent_them(self):
+        leaky = dict(SUBMISSION, message="401 with Bearer 9f8e7d6c5b4a3f2e for jane@acme.test", metadata={"password": "hunter2", "plan": "team"})
+        handler, sink = make()
+        status, _, _ = handler.handle_submit(json.dumps(leaky).encode(), JSON)
+        self.assertEqual(status, 202)
+        feedback = sink.records[0]["feedback"]
+        self.assertEqual(feedback["message"], "401 with [REDACTED] for [REDACTED]")
+        self.assertEqual(feedback["metadata"], {"password": "[REDACTED]", "plan": "team"})
+        # Asked not to: as sent.
+        handler, sink = make(redact=False)
+        handler.handle_submit(json.dumps(leaky).encode(), JSON)
+        self.assertEqual(sink.records[0]["feedback"]["message"], leaky["message"])
+
     def test_record_carries_service_account_and_source(self):
         handler, sink = make(service="acme-api", source="mcp")
         handler.handle_submit(BODY, JSON, "acct_abc")

@@ -96,6 +96,26 @@ registerFeedbackTool(server, { service: "acme-mcp", onRecord: forwardTo({ url, i
 
 Records go wherever `onRecord` sends them: the [reference collector](packages/collector) (`npx @backloop/collector`, JSONL on disk), your own store, or the hosted platform.
 
+### backloop.json
+
+Backloop runs your tests on every fix it proposes. It learns how from `backloop.json` at the root of your repository:
+
+```json
+{
+  "dir": "services/api",
+  "setup": "python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt -r requirements-dev.txt",
+  "test": ".venv/bin/python -m pytest -q",
+  "docs": "services/api/openapi.yaml"
+}
+```
+
+- `dir`: the API's folder, relative to the repository root. Omit it when the API is at the root. `setup` and `test` run inside it.
+- `setup`: installs what a fresh clone needs before `test`. Omit it when there is nothing to install. On Backloop it runs as an unprivileged user: nothing that needs root (`apt-get`, `corepack enable`).
+- `test`: runs the API's tests and exits 0 when they pass. `null` means nothing can run there; add a `note` saying why.
+- `docs`: the API reference (OpenAPI or Markdown), relative to the repository root. Omit it when there is none.
+
+One line per command, strict JSON. Commit it to your default branch. Without it, Backloop reads the lockfile, and when that says nothing the coding agent works your tests out on its first run and adds the file to its pull request.
+
 ## Try the whole path locally
 
 Requires Node ≥ 22.13 and pnpm. Python ≥ 3.9 for the Python SDK tests.
@@ -126,13 +146,13 @@ cat data/feedback.jsonl           # every record
 
 Feedback text is written by third-party agents. Treat it as untrusted input end to end.
 
-- The SDKs redact bearer tokens, API keys, JWTs, private keys, card numbers and emails before sending.
+- The SDKs redact bearer tokens, API keys, JWTs, private keys, card numbers and emails: the clients before sending, and the endpoint handlers before `onRecord` (`redact`, on by default), whatever client sent the report. Names in an agent's own words are not removed.
 - Services should pseudonymize accounts (`hashAccount`) before records leave them.
 - Don't relay agent-written text to other agents unless a human reviewed it.
 
 ## Backloop
 
-[Backloop](https://trybackloop.com) is the hosted platform built on this protocol. It clusters reports by what agents were trying to do, ranks them by impact, drafts the issue, and hands the fix to a coding agent. A human approves every PR. The platform is not part of this repository; everything here works without it.
+[Backloop](https://trybackloop.com) is the hosted platform built on this protocol. It clusters reports by what agents were trying to do, ranks them by impact, drafts the issue, and hands the fix to a coding agent. A human approves every PR, and what is pushed is the diff they reviewed; the coding agent runs code from your repository on the workspace's own machine, today under the platform's own user. The platform is not part of this repository; everything here works without it.
 
 ## Development
 
