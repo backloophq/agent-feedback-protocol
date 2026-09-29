@@ -48,7 +48,8 @@ tools = [feedback_tool()]  # {"name": "submit_feedback", "description", "input_s
 from backloop import FeedbackHandler, forward_to, hash_account
 
 handler = FeedbackHandler(
-    on_record=forward_to("https://collector.example.com", ingest_key=INGEST_KEY),  # or your own callable
+    # wait: answer the agent after at most 0.5 s and go on forwarding in a background thread.
+    on_record=forward_to("https://collector.example.com", ingest_key=INGEST_KEY, wait=0.5),  # or your own callable
     service="acme-companies-api",
     identify=lambda request: hash_account(current_account_id(request), SECRET) if authenticated(request) else None,
 )

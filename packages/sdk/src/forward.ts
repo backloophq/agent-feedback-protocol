@@ -7,6 +7,20 @@ export interface ForwardOptions {
   /** Ingest key, sent as a bearer token. */
   ingestKey?: string;
   timeoutMs?: number;
+  /**
+   * How long the agent's request waits for the collector's answer, in ms. Not set: until
+   * it answers (or fails). Set: at most that long, then forwarding goes on in the
+   * background, so a slow collector never holds the request. An answer that came in
+   * time still carries the known issue back to the agent.
+   */
+  waitMs?: number;
+  /**
+   * On serverless runtimes (Workers, Vercel), what keeps work alive after the response:
+   * `ctx.waitUntil`. Without it a background forward may be cut short there.
+   */
+  waitUntil?: (work: Promise<unknown>) => void;
+  /** Told about a forward that failed after the request was answered. Default: console.error. */
+  onError?: (error: unknown, record: FeedbackRecord) => void;
   fetch?: typeof fetch;
 }
 
@@ -17,7 +31,7 @@ export interface ForwardOptions {
 export function forwardTo(options: ForwardOptions): (record: FeedbackRecord) => Promise<OnRecordResult> {
   const fetchImpl = options.fetch ?? globalThis.fetch.bind(globalThis);
   const endpoint = `${options.url.replace(/\/+$/, "")}/v1/records`;
-  return async (record) => {
+  const forward = async (record: FeedbackRecord): Promise<OnRecordResult> => {
     const body = JSON.stringify({ records: [record] });
     const headers: Record<string, string> = { "content-type": "application/json" };
     if (options.ingestKey) headers.authorization = `Bearer ${options.ingestKey}`;
@@ -48,6 +62,31 @@ export function forwardTo(options: ForwardOptions): (record: FeedbackRecord) => 
       if (res.status < 500 && res.status !== 429) break;
     }
     throw lastError;
+  };
+  if (options.waitMs === undefined) return forward;
+
+  const late = options.onError ?? ((e) => console.error("[backloop] feedback record not forwarded", e));
+  return async (record) => {
+    let answered = false;
+    const work = forward(record).catch((e) => {
+      // Failed while the agent still waits: it is told (503), and retries.
+      if (!answered) throw e;
+      late(e, record);
+      return undefined;
+    });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const waited = new Promise<"late">((resolve) => {
+      timer = setTimeout(() => resolve("late"), options.waitMs);
+    });
+    try {
+      const first = await Promise.race([work, waited]);
+      if (first !== "late") return first;
+    } finally {
+      clearTimeout(timer);
+      answered = true;
+    }
+    options.waitUntil?.(work);
+    return undefined;
   };
 }
 

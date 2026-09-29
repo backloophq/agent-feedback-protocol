@@ -44,7 +44,7 @@ from .validate import (
     validate_submission,
 )
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 __all__ = [
     "ACK_SCHEMA",

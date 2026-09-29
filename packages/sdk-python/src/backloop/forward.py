@@ -2,11 +2,22 @@
 
 from __future__ import annotations
 
+import logging
+import threading
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as _Timeout
 from typing import Callable, List, Optional
 
 from . import _http
 from .server import OnRecord, OnRecordResult
 from .types import FeedbackRecord
+
+
+logger = logging.getLogger("backloop")
+
+# Forwards that outlive their request. Few threads: they wait on the network, and a
+# collector that is down must not take the service's threads with it.
+_BACKGROUND_THREADS = 4
+_BACKGROUND_LIMIT = 200
 
 
 class ForwardError(Exception):
@@ -17,13 +28,26 @@ class ForwardError(Exception):
         self.status = status
 
 
-def forward_to(url: str, ingest_key: Optional[str] = None, timeout: float = 5.0) -> OnRecord:
+def forward_to(
+    url: str,
+    ingest_key: Optional[str] = None,
+    timeout: float = 5.0,
+    wait: Optional[float] = None,
+    on_error: Optional[Callable[[Exception, FeedbackRecord], None]] = None,
+) -> OnRecord:
     """
     An ``on_record`` sink that forwards records to a collector's
     ``POST /v1/records`` and passes any ``known_issue`` back to the agent.
 
     Retries once on network errors, 429 and 5xx; raises ``ForwardError`` on
     failure, which the handler turns into ``503 unavailable``.
+
+    ``wait``: how long the agent's request waits for the collector's answer, in
+    seconds. None: until it answers (or fails). Set: at most that long, then
+    forwarding goes on in a background thread, so a slow collector never holds
+    a worker. An answer that came in time still carries the known issue back.
+    ``on_error`` is told about a forward that failed after the request was
+    answered (default: logged).
     """
     endpoint = url.rstrip("/") + "/v1/records"
     headers = {"content-type": "application/json"}
@@ -46,7 +70,50 @@ def forward_to(url: str, ingest_key: Optional[str] = None, timeout: float = 5.0)
                 break
         raise last_error
 
-    return sink
+    if wait is None:
+        return sink
+
+    pool = ThreadPoolExecutor(max_workers=_BACKGROUND_THREADS, thread_name_prefix="backloop-forward")
+    pending = threading.BoundedSemaphore(_BACKGROUND_LIMIT)
+
+    def late(error: Exception, record: FeedbackRecord) -> None:
+        if on_error:
+            on_error(error, record)
+        else:
+            logger.error("[backloop] feedback record %s not forwarded: %s", record.get("id"), error)
+
+    def background(record: FeedbackRecord) -> OnRecordResult:
+        # More waiting than a collector that is down can take: this one is dropped, and said so.
+        if not pending.acquire(blocking=False):
+            late(ForwardError(f"Too many records waiting for {endpoint}"), record)
+            return None
+        answered = threading.Event()
+        lock = threading.Lock()
+
+        def work() -> OnRecordResult:
+            try:
+                return sink(record)
+            except Exception as e:
+                with lock:
+                    if not answered.is_set():
+                        raise
+                late(e, record)
+                return None
+            finally:
+                pending.release()
+
+        future = pool.submit(work)
+        try:
+            return future.result(timeout=wait)
+        except _Timeout:
+            with lock:
+                answered.set()
+            # It failed between the timeout and the lock: nobody was told yet.
+            if future.done() and future.exception() is not None:
+                late(future.exception(), record)  # type: ignore[arg-type]
+            return None
+
+    return background
 
 
 def _result(raw: bytes) -> OnRecordResult:

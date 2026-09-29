@@ -1,4 +1,6 @@
 import json
+import threading
+import time
 import unittest
 
 from backloop import FeedbackHandler, ForwardError, fan_out, forward_to, memory_sink
@@ -66,6 +68,51 @@ class ForwardToTest(unittest.TestCase):
     def test_network_error_raises(self):
         with self.assertRaisesRegex(ForwardError, "Could not reach"):
             forward_to(refused_url(), timeout=2)(RECORD)
+
+
+class BackgroundForwardTest(unittest.TestCase):
+    def test_answers_without_waiting_for_a_slow_collector_and_still_forwards(self):
+        release = threading.Event()
+
+        def slow(_request):
+            release.wait(5)
+            return (200, DUPLICATE, {})
+
+        with LocalServer(slow) as collector:
+            started = time.monotonic()
+            result = forward_to(collector.url, wait=0.05)(RECORD)
+            self.assertIsNone(result)
+            self.assertLess(time.monotonic() - started, 1.0)
+            release.set()
+            deadline = time.monotonic() + 5
+            while not collector.requests and time.monotonic() < deadline:
+                time.sleep(0.01)
+            self.assertEqual(json.loads(collector.requests[0]["body"]), {"records": [RECORD]})
+
+    def test_a_quick_answer_still_reaches_the_agent(self):
+        with LocalServer((200, DUPLICATE, {})) as collector:
+            self.assertEqual(forward_to(collector.url, wait=2)(RECORD), {"known_issue": KNOWN_ISSUE})
+
+    def test_a_quick_failure_is_raised(self):
+        with self.assertRaises(ForwardError):
+            forward_to(refused_url(), wait=5)(RECORD)
+
+    def test_a_late_failure_is_reported_not_raised(self):
+        failed = []
+        done = threading.Event()
+
+        def late(_request):
+            time.sleep(0.2)
+            return (400, {"error": {"message": "no"}}, {})
+
+        def on_error(error, record):
+            failed.append((type(error).__name__, record["id"]))
+            done.set()
+
+        with LocalServer(late) as collector:
+            self.assertIsNone(forward_to(collector.url, wait=0.02, on_error=on_error)(RECORD))
+            self.assertTrue(done.wait(5))
+        self.assertEqual(failed, [("ForwardError", "fb_1")])
 
 
 class HandlerForwardingTest(unittest.TestCase):

@@ -36,7 +36,9 @@ import { createFeedbackHandler, forwardTo, hashAccount, withFeedbackLink } from 
 const feedback = createFeedbackHandler({
   service: "acme-companies-api",
   identify: async (req) => hashAccount(await accountIdFrom(req), SECRET), // undefined = anonymous
-  onRecord: forwardTo({ url: "https://collector.example.com", ingestKey }), // or your own function
+  // waitMs: answer the agent after at most 500 ms and go on forwarding in the background
+  // (serverless: also pass waitUntil). Without it, the request waits for the collector.
+  onRecord: forwardTo({ url: "https://collector.example.com", ingestKey, waitMs: 500 }), // or your own function
 });
 
 // Hono / Next.js / Workers:

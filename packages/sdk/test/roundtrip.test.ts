@@ -185,6 +185,52 @@ describe("forwarding", () => {
     expect(ack.known_issue.id).toBe("i");
   });
 
+  it("answers the agent without waiting for a slow collector, and still forwards", async () => {
+    const record = { id: "x", received_at: "2026-09-28T00:00:00Z", feedback: valid };
+    let release = () => {};
+    const received: unknown[] = [];
+    const slow = (async (_url: RequestInfo | URL, init?: RequestInit) => {
+      await new Promise<void>((r) => (release = r));
+      received.push(JSON.parse(String(init?.body)).records[0]);
+      return Response.json({ results: [{ id: "x", status: "accepted", known_issue: { id: "i", title: "t", status: "planned" } }] });
+    }) as typeof fetch;
+    const kept: Promise<unknown>[] = [];
+    const forward = forwardTo({ url: "http://collector", fetch: slow, waitMs: 20, waitUntil: (w) => kept.push(w) });
+    const started = Date.now();
+    expect(await forward(record)).toBeUndefined();
+    expect(Date.now() - started).toBeLessThan(500);
+    expect(received).toHaveLength(0);
+    // What a serverless runtime is asked to keep alive is the forward itself.
+    release();
+    await kept[0];
+    expect(received).toHaveLength(1);
+  });
+
+  it("with a wait, a quick answer still reaches the agent and a quick failure is a 503", async () => {
+    const quick = (async () => Response.json({ results: [{ id: "x", status: "accepted", known_issue: { id: "i", title: "t", status: "planned" } }] })) as typeof fetch;
+    const ok = setup({ onRecord: forwardTo({ url: "http://collector", fetch: quick, waitMs: 1000 }) });
+    expect((await (await ok.handler.fetch(post(valid))).json()).known_issue.id).toBe("i");
+    const down = (async () => {
+      throw new Error("connect ECONNREFUSED");
+    }) as typeof fetch;
+    const failing = setup({ onRecord: forwardTo({ url: "http://collector", fetch: down, waitMs: 1000 }) });
+    expect((await failing.handler.fetch(post(valid))).status).toBe(503);
+  });
+
+  it("tells onError about a forward that failed after the agent was answered", async () => {
+    const record = { id: "x", received_at: "2026-09-28T00:00:00Z", feedback: valid };
+    const late = (async () => {
+      await new Promise((r) => setTimeout(r, 40));
+      throw new Error("connect ECONNREFUSED");
+    }) as typeof fetch;
+    const failed: unknown[] = [];
+    const kept: Promise<unknown>[] = [];
+    const forward = forwardTo({ url: "http://collector", fetch: late, waitMs: 5, waitUntil: (w) => kept.push(w), onError: (e, r) => failed.push([String(e), r.id]) });
+    expect(await forward(record)).toBeUndefined();
+    await kept[0];
+    expect(failed).toEqual([["Error: connect ECONNREFUSED", "x"]]);
+  });
+
   it("does not retry a record the collector rejected", async () => {
     let calls = 0;
     const collector = (async () => {

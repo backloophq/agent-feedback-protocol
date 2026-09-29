@@ -67,7 +67,7 @@ import { createFeedbackHandler, forwardTo, hashAccount } from "@backloop/sdk";
 const feedback = createFeedbackHandler({
   service: "acme-companies-api",
   identify: async (req) => hashAccount(await accountIdFrom(req), process.env.ACCOUNT_HASH_SECRET!),
-  onRecord: forwardTo({ url: process.env.BACKLOOP_URL!, ingestKey: process.env.BACKLOOP_INGEST_KEY }),
+  onRecord: forwardTo({ url: process.env.BACKLOOP_URL!, ingestKey: process.env.BACKLOOP_INGEST_KEY, waitMs: 500 }),
 });
 
 app.post("/feedback", (c) => feedback.submit(c.req.raw));
@@ -83,7 +83,7 @@ pip install backloop-sdk
 ```python
 from backloop import FeedbackHandler, fastapi_router, forward_to
 
-handler = FeedbackHandler(on_record=forward_to(BACKLOOP_URL, ingest_key=KEY), service="acme")
+handler = FeedbackHandler(on_record=forward_to(BACKLOOP_URL, ingest_key=KEY, wait=0.5), service="acme")
 app.include_router(fastapi_router(handler))
 ```
 
