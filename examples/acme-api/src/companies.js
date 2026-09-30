@@ -10,6 +10,9 @@ export class ApiError extends Error {
 const MAX_PER_PAGE = 25;
 const MAX_PAGE = 40;
 
+/** Query parameters `/companies/search` understands. Anything else is ignored. */
+export const SEARCH_PARAMS = ["q", "industry", "country", "page", "per_page"];
+
 function toPublic(company) {
   const { jobs, ...rest } = company;
   return { ...rest, open_jobs: jobs.length };

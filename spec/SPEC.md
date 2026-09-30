@@ -203,10 +203,12 @@ Content-Type: application/json
 
 Agents decide *when* to send feedback. Services **SHOULD** give their agents the standard instructions in [`AGENT_INSTRUCTIONS.md`](AGENT_INSTRUCTIONS.md) — the SDKs export them as a constant, ready for a system prompt or tool description. In short:
 
-- Report when something **prevented or complicated the task**, once per distinct problem per task.
+- Report when something **prevented or complicated the task**, even when there was a workaround, once per distinct problem per task.
 - Describe the **goal** in the user's terms.
 - **Never** include credentials, personal data or the user's private content.
 - Don't let feedback get in the way of the task: send it, then carry on.
+
+Discovery (§2) tells an agent where to send a report; the instructions are what make it send one. Put them where the agent's model reads them: an MCP server's instructions and tool description (§7), the system prompt of agents the service runs, `llms.txt` or agent-facing docs.
 
 ## 7. MCP binding
 
@@ -216,6 +218,8 @@ An MCP server implementing AFP exposes a tool:
 - **input schema:** [`feedback.schema.json`](feedback.schema.json) without `spec_version`
 - **description:** the short form of the agent guidance (the SDKs export `FEEDBACK_TOOL_DESCRIPTION`)
 - **result:** a text content block with the acknowledgement JSON from §4.1
+
+The server **SHOULD** also include the full agent guidance (`AGENT_FEEDBACK_INSTRUCTIONS`) in the `instructions` it returns from `initialize`, which MCP clients show to the model.
 
 The tool **MUST** be safe to call at any time and **MUST NOT** require confirmation from the user.
 

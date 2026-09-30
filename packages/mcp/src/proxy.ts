@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import {
+  AGENT_FEEDBACK_INSTRUCTIONS,
   FEEDBACK_TOOL_DESCRIPTION,
   FEEDBACK_TOOL_NAME,
   FeedbackClient,
@@ -35,7 +36,8 @@ function text(value: unknown, isError = false): CallToolResult {
  * with the APIs it uses.
  */
 export function createFeedbackProxyServer(options: FeedbackProxyOptions = {}): McpServer {
-  const server = new McpServer({ name: "backloop-feedback", version: "0.1.3" });
+  // MCP clients show server instructions to the model; agents report when they are told to.
+  const server = new McpServer({ name: "backloop-feedback", version: "0.1.4" }, { instructions: AGENT_FEEDBACK_INSTRUCTIONS });
   const clients = new Map<string, FeedbackClient>();
 
   async function clientFor(serviceUrl?: string): Promise<FeedbackClient> {

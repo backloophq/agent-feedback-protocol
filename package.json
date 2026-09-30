@@ -18,7 +18,8 @@
     "demo:collector": "node --env-file-if-exists=.env packages/collector/dist/cli.js",
     "demo:api": "node --env-file-if-exists=.env examples/acme-api/src/server.js",
     "demo:agents": "node --env-file-if-exists=.env --import tsx examples/agent-fleet/src/simulate.ts",
-    "demo:claude-agent": "node --env-file-if-exists=.env --import tsx examples/agent-fleet/src/claude-agent.ts"
+    "demo:claude-agent": "node --env-file-if-exists=.env --import tsx examples/agent-fleet/src/claude-agent.ts",
+    "bench": "node --env-file-if-exists=.env --import tsx examples/agent-fleet/src/bench/run.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

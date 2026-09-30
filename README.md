@@ -20,7 +20,7 @@ Observability answers *what failed?* Agent feedback answers *what was the user t
 | [`packages/mcp`](packages/mcp) | `@backloop/mcp`: `submit_feedback` for any MCP server, plus a standalone stdio server for agents |
 | [`packages/collector`](packages/collector) | `@backloop/collector`: self-hostable reference collector (JSONL, Docker) |
 | [`examples/acme-api`](examples/acme-api) | Demo API that implements the protocol and has deliberate gaps |
-| [`examples/agent-fleet`](examples/agent-fleet) | Simulated fleet of 67 agent reports, plus a real Claude agent |
+| [`examples/agent-fleet`](examples/agent-fleet) | Simulated fleet of 67 agent reports, a real Claude agent, and the [report-rate benchmark](examples/agent-fleet#report-rate-benchmark) |
 
 ## The protocol in one minute
 
@@ -91,8 +91,23 @@ MCP:
 
 ```ts
 import { registerFeedbackTool } from "@backloop/mcp";
+import { AGENT_FEEDBACK_INSTRUCTIONS, forwardTo } from "@backloop/sdk";
+
+const server = new McpServer({ name: "acme", version: "1.0.0" }, { instructions: AGENT_FEEDBACK_INSTRUCTIONS });
 registerFeedbackTool(server, { service: "acme-mcp", onRecord: forwardTo({ url, ingestKey }) });
 ```
+
+### Tell agents to report
+
+An endpoint is not enough: agents report when they are told to. In [a benchmark](examples/agent-fleet#report-rate-benchmark) of Claude and GPT agents on an API with deliberate gaps, agents that only saw the `Link` header or a docs entry for `/feedback` almost never reported. With the standard instructions, in their prompt or in the API docs, the strongest models reported every problem they hit, including gaps they had worked around without an error.
+
+Put [`AGENT_FEEDBACK_INSTRUCTIONS`](spec/AGENT_INSTRUCTIONS.md) where the model reads it:
+
+- **MCP server:** its `instructions`, as above. MCP clients show them to the model.
+- **Docs agents read:** your OpenAPI `info.description`, `llms.txt`, or your pages for developers building agents on your API, next to `POST /feedback`.
+- **Agents you run:** their system prompt, with the tool from `feedbackTool()` (Python: `feedback_tool()`).
+
+Keep the `Link` header on errors too: it tells agents where to report, not when.
 
 Records go wherever `onRecord` sends them: the [reference collector](packages/collector) (`npx @backloop/collector`, JSONL on disk), your own store, or the hosted platform.
 
@@ -141,6 +156,8 @@ cat data/feedback.jsonl           # every record
 ```
 
 `pnpm demo:claude-agent` runs a real Claude agent on a task against the Acme API. It hits the missing hiring-role filter and reports it. Needs `ANTHROPIC_API_KEY`.
+
+`pnpm bench` measures how often agents report at all: real Claude agents on tasks with deliberate gaps, with and without each way of learning about `POST /feedback`. See [the benchmark](examples/agent-fleet#report-rate-benchmark).
 
 ## Security
 

@@ -1,6 +1,8 @@
 # Agent instructions — when and how to submit feedback
 
-Services implementing the Agent Feedback Protocol give these instructions to agents: in a system prompt, a tool description, `llms.txt`, or agent-facing docs. The SDKs export the block below as `AGENT_FEEDBACK_INSTRUCTIONS`, and a one-paragraph version as `FEEDBACK_TOOL_DESCRIPTION`.
+Services implementing the Agent Feedback Protocol give these instructions to agents, where the model reads them: an MCP server's instructions, a system prompt, a tool description, `llms.txt`, or agent-facing docs. The SDKs export the block below as `AGENT_FEEDBACK_INSTRUCTIONS`, and a one-paragraph version as `FEEDBACK_TOOL_DESCRIPTION`.
+
+Discovery (a `Link` header, `/.well-known/agent-feedback`) tells an agent where to report, not when. Agents report when they are told to. In a benchmark of Claude and GPT agents on an API with deliberate gaps, agents that only saw the `Link` header or a docs entry for `/feedback` almost never reported. With these instructions, in their prompt or in the API docs, the strongest models reported every problem they hit; smaller models reported far less ([the benchmark](https://github.com/backloophq/agent-feedback-protocol/tree/main/examples/agent-fleet#report-rate-benchmark)).
 
 ---
 
@@ -9,13 +11,15 @@ Services implementing the Agent Feedback Protocol give these instructions to age
 
 The services you call accept structured feedback through `POST /feedback` (or the `submit_feedback` tool). Your reports go to the engineers who build the service and are used to fix what got in your way. Use it.
 
-**Submit feedback when something prevented or complicated your task:**
-- a capability you needed does not exist (a filter, field, endpoint or bulk operation);
+**Submit feedback when something prevented or complicated your task, even if you found a workaround:**
+- a capability you needed does not exist (a filter, field, endpoint or bulk operation), so you made extra calls, filtered results yourself, or gave up;
 - the documentation was missing, ambiguous or wrong, and you had to guess;
 - a response was surprising or inconsistent with the docs;
 - an error message did not tell you how to fix the request;
 - the service behaved incorrectly;
 - latency, rate limits or pagination made the task impractical.
+
+**Before your final answer,** check whether any of these happened. If one did and you have not reported it, report it now, then answer.
 
 **Don't submit feedback** for your own mistakes that the service reported clearly, for things you have not tried, or more than once for the same problem in the same task.
 

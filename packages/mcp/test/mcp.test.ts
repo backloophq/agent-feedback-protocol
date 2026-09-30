@@ -1,7 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { FEEDBACK_SCHEMA, createFeedbackHandler, memorySink } from "@backloop/sdk";
+import { AGENT_FEEDBACK_INSTRUCTIONS, FEEDBACK_SCHEMA, createFeedbackHandler, memorySink } from "@backloop/sdk";
 import { describe, expect, it } from "vitest";
 import { createFeedbackProxyServer, registerFeedbackTool } from "../src/index.js";
 
@@ -91,6 +91,11 @@ describe("createFeedbackProxyServer", () => {
     });
     expect(textOf(result).status).toBe("accepted");
     expect(sink.records.at(-1)!.feedback).toMatchObject({ ...feedback, agent: { name: "proxy-test" } });
+  });
+
+  it("tells the agent when to report, in its server instructions", async () => {
+    const client = await connect(createFeedbackProxyServer({ fetch: fetchImpl }));
+    expect(client.getInstructions()).toBe(AGENT_FEEDBACK_INSTRUCTIONS);
   });
 
   it("uses a fixed endpoint when configured", async () => {
