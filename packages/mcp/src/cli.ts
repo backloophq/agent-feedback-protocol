@@ -6,7 +6,7 @@
  *   BACKLOOP_FEEDBACK_URL   fixed feedback endpoint (optional; otherwise the
  *                           tool asks for the service's base URL)
  *   BACKLOOP_FEEDBACK_TOKEN bearer credential for that service (optional)
- *   BACKLOOP_AGENT_NAME     reported as agent.name (optional)
+ *   BACKLOOP_AGENT_NAME     reported as agent.name (optional; default: the MCP client's name)
  */
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { newId } from "@backloop/sdk";

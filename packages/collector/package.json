@@ -1,6 +1,6 @@
 {
   "name": "@backloop/collector",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Self-hostable reference collector for the Agent Feedback Protocol. Receives, de-duplicates and stores agent feedback.",
   "license": "Apache-2.0",
   "homepage": "https://trybackloop.com",

@@ -65,7 +65,12 @@ def fastapi_router(handler: FeedbackHandler, identify: Optional[Identify] = None
             request.headers.get("x-forwarded-for"), request.client.host if request.client else None
         )
         status, payload, headers = await run_in_threadpool(
-            handler.handle_submit, bytes(body), request.headers.get("content-type"), account, client_ip
+            handler.handle_submit,
+            bytes(body),
+            request.headers.get("content-type"),
+            account,
+            client_ip,
+            request.headers.get("user-agent"),
         )
         return JSONResponse(payload, status_code=status, headers=headers)
 
@@ -94,7 +99,7 @@ def flask_blueprint(handler: FeedbackHandler, identify: Optional[Identify] = Non
         account = resolve(request) if resolve else None
         client_ip = _client_ip(request.headers.get("X-Forwarded-For"), request.remote_addr)
         status, payload, headers = handler.handle_submit(
-            body, request.headers.get("Content-Type"), account, client_ip
+            body, request.headers.get("Content-Type"), account, client_ip, request.headers.get("User-Agent")
         )
         return Response(json.dumps(payload, ensure_ascii=False), status=status, headers=headers)
 

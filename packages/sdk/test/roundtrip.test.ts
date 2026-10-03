@@ -43,6 +43,21 @@ describe("server handler", () => {
     expect(sink.records[0]).toMatchObject({ id: ack.id, service: "acme", account: "acct_1", source: "http", feedback: valid });
   });
 
+  it("names the agent from the User-Agent when the submission doesn't", async () => {
+    const { handler, sink } = setup();
+    await handler.fetch(post(valid, { "user-agent": "claude-code/2.1.0 (external, cli)" }));
+    await handler.fetch(post({ ...valid, agent: { model: "m" } }, { "user-agent": "ChatGPT-User/1.0" }));
+    // What the agent says about itself wins; an HTTP library is not an agent.
+    await handler.fetch(post({ ...valid, agent: { name: "ops-agent" } }, { "user-agent": "claude-code/2.1.0" }));
+    await handler.fetch(post(valid, { "user-agent": "python-requests/2.32.3" }));
+    expect(sink.records.map((r) => r.feedback.agent)).toEqual([
+      { name: "claude-code", version: "2.1.0" },
+      { name: "ChatGPT-User", version: "1.0", model: "m" },
+      { name: "ops-agent" },
+      undefined,
+    ]);
+  });
+
   it("removes secrets and email addresses, whatever client sent them", async () => {
     const leaky = { ...valid, message: "401 with Bearer 9f8e7d6c5b4a3f2e for jane@acme.test", metadata: { password: "hunter2", plan: "team" } };
     const { handler, sink } = setup();

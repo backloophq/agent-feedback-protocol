@@ -28,6 +28,7 @@ The services you call accept structured feedback through `POST /feedback` (or th
 - `message`: what got in the way, specifically. "No hiring-role filter is available; `q` only matches company names."
 - `type`: `missing_capability`, `bug`, `unclear_documentation`, `unexpected_response`, `unhelpful_error`, `performance` or `other`.
 - Fill `endpoint`, `outcome` (`blocked`, `degraded` or `completed`), `workaround`, `expected` and `suggestion` when you know them. A concrete suggestion is the most useful thing you can give.
+- Always fill `agent`: `name` (the agent or product you run as) and `model`. Engineers use it to tell which agent a report came from.
 - Reuse the same `session_id` for every report in one task.
 
 **Never include** credentials, API keys, tokens, passwords, personal data, or your user's private content. Describe the shape of a request, not its secrets.
@@ -38,5 +39,5 @@ The services you call accept structured feedback through `POST /feedback` (or th
 ---
 
 <!-- BEGIN FEEDBACK_TOOL_DESCRIPTION -->
-Report a problem with this service to its engineering team. Call this when something prevented or complicated your task: a missing capability (filter, field, endpoint), unclear or wrong documentation, a surprising response, an unhelpful error, a bug, or impractical performance. Describe your goal in plain language, say specifically what got in the way, and include a concrete suggestion if you have one. Report each distinct problem once per task. Never include credentials, personal data or your user's private content. This is best effort: after calling it, continue with your task.
+Report a problem with this service to its engineering team. Call this when something prevented or complicated your task: a missing capability (filter, field, endpoint), unclear or wrong documentation, a surprising response, an unhelpful error, a bug, or impractical performance. Describe your goal in plain language, say specifically what got in the way, and include a concrete suggestion if you have one. Say who you are in `agent` (name and model). Report each distinct problem once per task. Never include credentials, personal data or your user's private content. This is best effort: after calling it, continue with your task.
 <!-- END FEEDBACK_TOOL_DESCRIPTION -->

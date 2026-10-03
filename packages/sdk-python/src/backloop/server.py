@@ -38,6 +38,29 @@ JSON_HEADERS = {"content-type": "application/json; charset=utf-8"}
 _JSON_CONTENT_TYPE = re.compile(r"application/(?:[\w.+-]+\+)?json\b", re.I | re.ASCII)
 
 
+#: HTTP libraries, browsers and the SDK clients: a User-Agent that says nothing about the agent.
+_GENERIC_USER_AGENT = re.compile(
+    r"(mozilla|backloop-sdk|python|curl|wget|node|undici|axios|got|go-http-client|okhttp|java"
+    r"|apache-httpclient|aiohttp|werkzeug|ruby|deno|bun|postmanruntime|libwww)",
+    re.I,
+)
+_PRODUCT_TOKEN = re.compile(r"([^\s/()]{1,128})(?:/([^\s()]{1,64}))?")
+
+
+def agent_from_user_agent(user_agent: Optional[str]) -> Optional[Dict[str, str]]:
+    """An ``agent`` block from a ``User-Agent`` header (its first product token).
+
+    None when the header only names an HTTP library or a browser.
+    """
+    m = _PRODUCT_TOKEN.match((user_agent or "").strip())
+    if not m or _GENERIC_USER_AGENT.match(m.group(1)):
+        return None
+    agent = {"name": m.group(1)}
+    if m.group(2):
+        agent["version"] = m.group(2)
+    return agent
+
+
 def error_response(
     status: int,
     code: str,
@@ -134,8 +157,13 @@ class FeedbackHandler:
         content_type: Optional[str],
         account: Optional[str] = None,
         client_ip: Optional[str] = None,
+        user_agent: Optional[str] = None,
     ) -> HandlerResponse:
-        """Handle ``POST /feedback``. Returns ``(status, json_body, headers)``."""
+        """Handle ``POST /feedback``. Returns ``(status, json_body, headers)``.
+
+        ``user_agent`` is the request's ``User-Agent`` header: it names the agent
+        on submissions that have no ``agent.name``.
+        """
         raw = body.encode("utf-8") if isinstance(body, str) else bytes(body)
         if not _JSON_CONTENT_TYPE.match(content_type or ""):
             return error_response(415, "unsupported_media_type", "Content-Type must be application/json")
@@ -171,6 +199,11 @@ class FeedbackHandler:
         record["source"] = self.source or "http"
         if self.redact is not False:
             parsed = _redact(parsed, **(self.redact if isinstance(self.redact, Mapping) else {}))
+        # Agents often skip `agent`: the User-Agent may still say who is calling.
+        if not (parsed.get("agent") or {}).get("name"):
+            seen = agent_from_user_agent(user_agent)
+            if seen:
+                parsed = {**parsed, "agent": {**seen, **(parsed.get("agent") or {})}}
         record["feedback"] = parsed
 
         try:

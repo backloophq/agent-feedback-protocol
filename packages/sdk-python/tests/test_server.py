@@ -72,6 +72,16 @@ class HappyPathTest(unittest.TestCase):
         self.assertEqual(list(record), ["id", "received_at", "service", "account", "source", "feedback"])
         self.assertTrue(validate_record(record).valid)
 
+    def test_names_the_agent_from_the_user_agent(self):
+        handler, sink = make()
+        handler.handle_submit(BODY, JSON, user_agent="claude-code/2.1.0 (external, cli)")
+        named = json.dumps({**json.loads(BODY), "agent": {"name": "ops-agent"}}).encode()
+        handler.handle_submit(named, JSON, user_agent="claude-code/2.1.0")
+        # An HTTP library is not an agent.
+        handler.handle_submit(BODY, JSON, user_agent="python-requests/2.32.3")
+        agents = [r["feedback"].get("agent") for r in sink.records]
+        self.assertEqual(agents, [{"name": "claude-code", "version": "2.1.0"}, {"name": "ops-agent"}, None])
+
     def test_known_issue_is_passed_back(self):
         handler, _ = make(lambda record: {"known_issue": KNOWN_ISSUE})
         status, body, _ = handler.handle_submit(BODY, JSON)

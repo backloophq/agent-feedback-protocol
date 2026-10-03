@@ -34,7 +34,8 @@ export const feedbackInputShape = {
       framework: z.string().max(128).optional(),
     })
     .strict()
-    .optional(),
+    .optional()
+    .describe("Who you are: the agent or product you run as (name) and your model. Always fill it."),
   evidence: z
     .object({
       status_code: z.number().int().min(100).max(599).optional(),

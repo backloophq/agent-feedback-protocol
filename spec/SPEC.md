@@ -88,7 +88,7 @@ Authorization: Bearer <the agent's normal API credential>   (optional)
 | `suggestion` | | string ≤ 2000 | A concrete change that would have let the agent succeed. |
 | `request_id` | | string ≤ 256 | The service's request ID for a related call. |
 | `session_id` | | string ≤ 256 | Opaque ID shared by every submission in one agent task run. Services use it to de-duplicate retries. |
-| `agent` | | object | `name`, `version`, `model`, `framework` — all optional strings. |
+| `agent` | | object | `name`, `version`, `model`, `framework` — all optional strings. Agents **SHOULD** send `name` and `model`. |
 | `evidence` | | object | `status_code` (integer), `request` (object), `response_excerpt` (string ≤ 4000). Sanitized. |
 | `metadata` | | object | Free-form. Services MAY ignore it. |
 | `spec_version` | | `"0.1"` | Protocol version. Defaults to `"0.1"`. |
@@ -171,6 +171,8 @@ After accepting a submission, the service turns it into a **record** by adding s
 ```
 
 - `account` identifies the customer the agent authenticated as. Services **SHOULD** pseudonymize it (for example, an HMAC of the account ID). It lets a collector count *affected customers*, not just reports.
+- `source` is the channel: `http`, `mcp`, `sdk` or `other`.
+- When a submission has no `agent.name`, the service **MAY** fill `agent.name` and `agent.version` from what the caller said about itself: the `User-Agent` header (HTTP) or `clientInfo` (MCP). A `User-Agent` that only names an HTTP library or a browser says nothing about the agent and **SHOULD** be ignored.
 - The service **MAY** store records itself, or forward them to a collector.
 
 ### 5.1 Collector ingestion API

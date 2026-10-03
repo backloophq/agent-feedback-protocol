@@ -41,7 +41,8 @@ class FastAPITest(unittest.TestCase):
         res = self.client(handler).post("/feedback", json=BODY)
         self.assertEqual(res.status_code, 202)
         self.assertEqual(res.json()["known_issue"], KNOWN_ISSUE)
-        self.assertEqual(sink.records[0]["feedback"], BODY)
+        # The submission names no agent: the caller's User-Agent does (Starlette's test client).
+        self.assertEqual(sink.records[0]["feedback"], {**BODY, "agent": {"name": "testclient"}})
 
     def test_identify_sync_and_async(self):
         async def async_identify(request):

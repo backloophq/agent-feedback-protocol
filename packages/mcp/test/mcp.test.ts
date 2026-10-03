@@ -56,6 +56,10 @@ describe("registerFeedbackTool", () => {
     const ack = textOf(result);
     expect(ack).toMatchObject({ status: "accepted", known_issue: { id: "iss_1" } });
     expect(sink.records[0]).toMatchObject({ id: ack.id, source: "mcp", service: "acme-mcp", account: "acct_mcp", feedback });
+    // The agent didn't say who it is: the MCP client's clientInfo does.
+    expect(sink.records[0]!.feedback.agent).toEqual({ name: "test-client", version: "1.0.0" });
+    await client.callTool({ name: "submit_feedback", arguments: { ...feedback, agent: { name: "ops-agent" } } });
+    expect(sink.records[1]!.feedback.agent).toEqual({ name: "ops-agent" });
   });
 
   it("removes secrets and email addresses from what the agent sent", async () => {

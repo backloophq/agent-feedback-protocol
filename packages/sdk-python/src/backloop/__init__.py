@@ -16,6 +16,7 @@ from .server import (
     FeedbackHandler,
     HandlerResponse,
     OnRecordResult,
+    agent_from_user_agent,
     error_response,
     feedback_link_header,
 )
@@ -44,7 +45,7 @@ from .validate import (
     validate_submission,
 )
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 __all__ = [
     "ACK_SCHEMA",
@@ -77,6 +78,7 @@ __all__ = [
     "SubmitResult",
     "ValidationIssue",
     "ValidationResult",
+    "agent_from_user_agent",
     "error_response",
     "fan_out",
     "fastapi_router",

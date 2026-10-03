@@ -10,6 +10,7 @@ import {
   type FeedbackSubmission,
 } from "@backloop/sdk";
 import { z } from "zod";
+import { clientAgent } from "./index.js";
 import { feedbackInputShape } from "./shape.js";
 
 export interface FeedbackProxyOptions {
@@ -20,6 +21,7 @@ export interface FeedbackProxyOptions {
   endpoint?: string;
   /** Bearer credential sent to the service, so feedback is attributed to your account. */
   apiKey?: string;
+  /** Reported as `agent` on every submission. Default: the connected MCP client's `clientInfo`. */
   agent?: AgentInfo;
   sessionId?: string;
   fetch?: typeof fetch;
@@ -37,7 +39,7 @@ function text(value: unknown, isError = false): CallToolResult {
  */
 export function createFeedbackProxyServer(options: FeedbackProxyOptions = {}): McpServer {
   // MCP clients show server instructions to the model; agents report when they are told to.
-  const server = new McpServer({ name: "backloop-feedback", version: "0.1.4" }, { instructions: AGENT_FEEDBACK_INSTRUCTIONS });
+  const server = new McpServer({ name: "backloop-feedback", version: "0.1.5" }, { instructions: AGENT_FEEDBACK_INSTRUCTIONS });
   const clients = new Map<string, FeedbackClient>();
 
   async function clientFor(serviceUrl?: string): Promise<FeedbackClient> {
@@ -45,7 +47,7 @@ export function createFeedbackProxyServer(options: FeedbackProxyOptions = {}): M
     if (!key) throw new FeedbackError("service_url is required: the base URL of the API you are reporting on", "invalid_feedback");
     const cached = clients.get(key);
     if (cached) return cached;
-    const common = { apiKey: options.apiKey, agent: options.agent, sessionId: options.sessionId, fetch: options.fetch };
+    const common = { apiKey: options.apiKey, agent: options.agent ?? clientAgent(server), sessionId: options.sessionId, fetch: options.fetch };
     const client = options.endpoint
       ? new FeedbackClient({ ...common, endpoint: options.endpoint })
       : ((await FeedbackClient.fromDiscovery(key, common)) ?? new FeedbackClient({ ...common, baseUrl: key }));

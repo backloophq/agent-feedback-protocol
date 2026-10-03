@@ -7,6 +7,7 @@ import {
   SPEC_VERSION,
   WELL_KNOWN_PATH,
   type AuthMode,
+  type AgentInfo,
   type DiscoveryDocument,
   type ErrorBody,
   type FeedbackAck,
@@ -87,6 +88,21 @@ export function withFeedbackLink(response: Response, path = "/feedback"): Respon
   const headers = new Headers(response.headers);
   headers.append("link", feedbackLinkHeader(path));
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
+/** HTTP libraries, browsers and the SDK clients: a User-Agent that says nothing about the agent. */
+const GENERIC_USER_AGENT =
+  /^(mozilla|backloop-sdk|python|curl|wget|node|undici|axios|got|go-http-client|okhttp|java|apache-httpclient|aiohttp|werkzeug|ruby|deno|bun|postmanruntime|libwww)/i;
+
+/**
+ * An `agent` block from a `User-Agent` header (its first product token), for
+ * submissions that don't say who sent them. Undefined when the header only
+ * names an HTTP library or a browser.
+ */
+export function agentFromUserAgent(userAgent: string | null | undefined): AgentInfo | undefined {
+  const m = /^([^\s/()]{1,128})(?:\/([^\s()]{1,64}))?/.exec(userAgent?.trim() ?? "");
+  if (!m || GENERIC_USER_AGENT.test(m[1]!)) return undefined;
+  return { name: m[1]!, ...(m[2] ? { version: m[2] } : {}) };
 }
 
 class RateLimiter {
@@ -178,13 +194,16 @@ export function createFeedbackHandler(options: FeedbackHandlerOptions): Feedback
     const result = validateSubmission(parsed);
     if (!result.valid) return errorResponse(400, "invalid_feedback", formatIssues(result.issues), result.issues);
 
+    const feedback = options.redact === false ? result.value : redact(result.value, typeof options.redact === "object" ? options.redact : {});
+    // Agents often skip `agent`: the User-Agent may still say who is calling.
+    const seen = feedback.agent?.name ? undefined : agentFromUserAgent(request.headers.get("user-agent"));
     const record: FeedbackRecord = {
       id: generateId(),
       received_at: now().toISOString(),
       ...(options.service ? { service: options.service } : {}),
       ...(account ? { account } : {}),
       source: options.source ?? "http",
-      feedback: options.redact === false ? result.value : redact(result.value, typeof options.redact === "object" ? options.redact : {}),
+      feedback: seen ? { ...feedback, agent: { ...seen, ...feedback.agent } } : feedback,
     };
 
     let outcome: OnRecordResult;

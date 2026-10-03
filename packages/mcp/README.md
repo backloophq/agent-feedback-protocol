@@ -39,4 +39,4 @@ BACKLOOP_FEEDBACK_URL=https://api.acme.com/feedback npx @backloop/mcp # fixed en
 |---|---|
 | `BACKLOOP_FEEDBACK_URL` | Fixed feedback endpoint. Without it the tool takes a `service_url` and uses `/.well-known/agent-feedback`. |
 | `BACKLOOP_FEEDBACK_TOKEN` | Bearer credential sent to the service |
-| `BACKLOOP_AGENT_NAME` | Reported as `agent.name` |
+| `BACKLOOP_AGENT_NAME` | Reported as `agent.name`. Default: the name the MCP client gave in `clientInfo`. |

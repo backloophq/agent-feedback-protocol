@@ -83,7 +83,7 @@
       "maxLength": 256
     },
     "agent": {
-      "description": "Self-reported information about the agent.",
+      "description": "Who is reporting: the agent or product name and its model. Self-reported; always fill `name` and `model`.",
       "type": "object",
       "additionalProperties": false,
       "properties": {

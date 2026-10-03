@@ -18,6 +18,7 @@ export {
 } from "./client.js";
 export {
   createFeedbackHandler,
+  agentFromUserAgent,
   errorResponse,
   feedbackLinkHeader,
   withFeedbackLink,
