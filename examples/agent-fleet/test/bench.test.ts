@@ -65,11 +65,19 @@ describe("Acme API feedback channels", () => {
     expect((await get(app, "/companies/search?q=nothing-matches")).body.feedback).toEqual(FEEDBACK_HINT);
     expect((await get(app, "/companies/search?industry=saas")).body.feedback).toBeUndefined();
   });
+
+  it("can put the standard instructions in the hint, in the same places", async () => {
+    const app = createApp({ onRecord: memorySink(), bodyHints: true, hintInstructions: true });
+    const withInstructions = { ...FEEDBACK_HINT, instructions: AGENT_FEEDBACK_INSTRUCTIONS };
+    expect((await get(app, "/companies/search?country=Germany")).body.feedback).toEqual(withInstructions);
+    expect((await get(app, "/companies/search?q=nothing-matches")).body.feedback).toEqual(withInstructions);
+    expect((await get(app, "/companies/search?industry=saas")).body.feedback).toBeUndefined();
+  });
 });
 
 describe("arms", () => {
   it("never mentions feedback to an agent unless the arm does", () => {
-    for (const name of ["none", "link", "hint", "tool"] as const) {
+    for (const name of ["none", "link", "hint", "hint-instructed", "tool"] as const) {
       expect(systemPrompt(arm(name))).not.toMatch(/feedback/i);
     }
     expect(OPENAPI_WITHOUT_FEEDBACK).toContain("/companies/{id}/jobs:");

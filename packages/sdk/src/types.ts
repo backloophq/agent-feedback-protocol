@@ -69,6 +69,21 @@ export interface KnownIssue {
   status: KnownIssueStatus;
   url?: string;
   workaround?: string;
+  /** When status is fixed: when the fix shipped (ISO 8601). */
+  fixed_at?: string;
+  /** Written by a person on the service's team: what changed and how to use it now. */
+  note?: string;
+}
+
+/** One entry of a service's changelog for agents (spec §4.3). */
+export interface ChangeEntry extends KnownIssue {
+  /** The endpoints or tools the change concerns. */
+  endpoints?: string[];
+}
+
+/** Served at the discovery document's `changes` URL. */
+export interface ChangesDocument {
+  changes: ChangeEntry[];
 }
 
 /** Body of a `202` response. See spec/ack.schema.json. */
@@ -112,6 +127,8 @@ export interface DiscoveryDocument {
   types: readonly FeedbackType[];
   max_bytes: number;
   auth: AuthMode;
+  /** The service's changelog for agents (spec §4.3). */
+  changes?: string;
 }
 
 /** Collector ingestion: `POST /v1/records`. */

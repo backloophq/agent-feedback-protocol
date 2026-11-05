@@ -24,7 +24,7 @@ const API_KEY = "acme_live_bench";
 
 // ── Arms: how the agent can learn that POST /feedback exists ────────────────
 
-export type ArmName = "none" | "docs" | "docs-instructed" | "link" | "hint" | "tool" | "instructed";
+export type ArmName = "none" | "docs" | "docs-instructed" | "link" | "hint" | "hint-instructed" | "tool" | "instructed";
 
 export interface Arm {
   name: ArmName;
@@ -37,13 +37,15 @@ export interface Arm {
   linkHeader: boolean;
   /** A feedback hint in error bodies, and in searches that ignored a parameter or found nothing. */
   bodyHints: boolean;
+  /** The hint carries the standard AGENT_FEEDBACK_INSTRUCTIONS too. */
+  bodyInstructions: boolean;
   /** A `submit_feedback` tool next to `http_request`, as an MCP server would expose it. */
   tool: boolean;
   /** The standard AGENT_FEEDBACK_INSTRUCTIONS in the system prompt. */
   instructions: boolean;
 }
 
-const off = { docs: false, docsInstructions: false, linkHeader: false, bodyHints: false, tool: false, instructions: false };
+const off = { docs: false, docsInstructions: false, linkHeader: false, bodyHints: false, bodyInstructions: false, tool: false, instructions: false };
 
 export const ARMS: Arm[] = [
   { name: "none", summary: "The endpoint exists, nothing mentions it", ...off },
@@ -51,6 +53,14 @@ export const ARMS: Arm[] = [
   { name: "docs-instructed", summary: "The API docs list POST /feedback and carry the standard instructions", ...off, docs: true, docsInstructions: true },
   { name: "link", summary: "Link header on every error (the spec today)", ...off, linkHeader: true },
   { name: "hint", summary: "Link header, plus a hint in the body when the agent is likely stuck", ...off, linkHeader: true, bodyHints: true },
+  {
+    name: "hint-instructed",
+    summary: "The hint, carrying the standard instructions",
+    ...off,
+    linkHeader: true,
+    bodyHints: true,
+    bodyInstructions: true,
+  },
   { name: "tool", summary: "A submit_feedback tool, no instructions", ...off, tool: true },
   { name: "instructed", summary: "The tool, plus the standard instructions in the system prompt", ...off, tool: true, instructions: true },
 ];
@@ -204,7 +214,7 @@ function hasBodyHint(text: string): boolean {
 /** A fresh Acme API for one run, the agent's tools, and what the run did. */
 export function createTrial(arm: Arm, agent: { model: string; framework?: string }) {
   const sink = memorySink();
-  const app = createApp({ onRecord: sink, linkHeader: arm.linkHeader, bodyHints: arm.bodyHints, rateLimit: false });
+  const app = createApp({ onRecord: sink, linkHeader: arm.linkHeader, bodyHints: arm.bodyHints, hintInstructions: arm.bodyInstructions, rateLimit: false });
   const fetchApp = async (input: RequestInfo | URL, init?: RequestInit) => app.fetch(new Request(input, init));
   const calls: Call[] = [];
 

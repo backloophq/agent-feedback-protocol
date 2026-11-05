@@ -254,6 +254,15 @@ export const ACK_SCHEMA = {
         },
         "workaround": {
           "type": "string"
+        },
+        "fixed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When status is fixed: when the fix shipped."
+        },
+        "note": {
+          "type": "string",
+          "description": "Written by a person on the service's team: what changed and how to use it now."
         }
       }
     }

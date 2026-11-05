@@ -27,6 +27,16 @@ export {
   type OnRecordResult,
   type RecordContext,
 } from "./server.js";
-export { forwardTo, fanOut, memorySink, type ForwardOptions } from "./forward.js";
+export { forwardTo, fanOut, memorySink, changesFrom, type ForwardOptions } from "./forward.js";
 export { feedbackTool, feedbackToolInputSchema, FEEDBACK_TOOL_NAME } from "./tool.js";
 export { duplicateKey, normalizeText } from "./dedupe.js";
+export {
+  FRUSTRATION_LEVELS,
+  SESSION_EVENT_LIMITS,
+  type FrustrationLevel,
+  type SessionEvent,
+  type SessionTelemetry,
+  type ToolCallEvent,
+  type HttpRequestEvent,
+} from "./sessions.js";
+export { recordRequests, detectAgent, collapsePath, type RecordRequestsOptions, type RequestRecorder } from "./requests.js";

@@ -39,6 +39,8 @@ An agent needs to know a service accepts feedback before it can send any. A serv
 
    `auth` is one of `none` (credentials are ignored), `optional` (anonymous submissions accepted; authenticated ones are attributed to an account) or `required`.
 
+   The document **MAY** carry a `changes` URL: the service's changelog for agents (§4.3).
+
 3. **SHOULD** add a `Link` header to every error response (4xx and 5xx), so an agent learns about the endpoint exactly when it is most useful:
 
    ```http
@@ -128,6 +130,8 @@ Unknown top-level fields **MUST** be rejected, so that typos surface during inte
 
 The body validates against [`ack.schema.json`](ack.schema.json). `known_issue` is **OPTIONAL**. When present, it tells the agent the problem is already tracked, so it can stop retrying, tell its user, or apply the workaround. This closes the loop in both directions.
 
+When `status` is `fixed`, a `known_issue` **MAY** carry `fixed_at` (when the fix shipped) and `note` (what changed and how to use it now). `note` and `workaround` **MUST** be written by a person on the service's team: never text an agent sent.
+
 A service **SHOULD** return `202` for duplicates too (same `session_id` and content), so agents never need to reason about duplicates themselves.
 
 ### 4.2 Errors
@@ -154,6 +158,27 @@ Errors use a single shape:
 | `429` | `rate_limited` | Too many submissions. Include `Retry-After`. |
 
 Agents **MUST NOT** retry a `400`, `401`, `413` or `415`. They **MAY** retry `429` and `5xx` once, after the `Retry-After` delay. Feedback is best effort: failing to submit it **MUST NOT** fail the agent's task.
+
+### 4.3 Changes — `GET` the discovery document's `changes` URL
+
+An agent that hit a gap last week has no reason to come back. A service **MAY** publish what it fixed, so agents (and the people behind them) learn that a task that failed now works:
+
+```json
+{
+  "changes": [
+    {
+      "id": "iss_hiring_role_filter",
+      "title": "Add hiring-role filter to /companies/search",
+      "status": "fixed",
+      "fixed_at": "2026-10-02T14:00:00Z",
+      "note": "Use hiring_role=gtm_engineer on /companies/search.",
+      "endpoints": ["/companies/search"]
+    }
+  ]
+}
+```
+
+Entries are the same objects as `known_issue`, plus the `endpoints` they concern, newest first. The same rule applies: only text a person wrote. An agent that failed at a task **SHOULD** check `changes` before telling its user the service can't do it.
 
 ## 5. Records and forwarding
 

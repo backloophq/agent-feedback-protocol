@@ -9,12 +9,16 @@ import { serve } from "@hono/node-server";
 import { forwardTo } from "@backloop/sdk";
 import { createApp } from "./app.js";
 
+const backloop = {
+  url: process.env.BACKLOOP_URL ?? "http://localhost:4700",
+  ingestKey: process.env.BACKLOOP_INGEST_KEY ?? "dev-ingest-key",
+};
 const app = createApp({
   secret: process.env.ACCOUNT_HASH_SECRET ?? "demo-secret",
-  onRecord: forwardTo({
-    url: process.env.BACKLOOP_URL ?? "http://localhost:4700",
-    ingestKey: process.env.BACKLOOP_INGEST_KEY ?? "dev-ingest-key",
-  }),
+  onRecord: forwardTo(backloop),
+  // Agent requests become sessions, and agents can read what was fixed (GET /feedback/changes).
+  // The reference collector doesn't take them: only with the platform (BACKLOOP_URL set).
+  ...(process.env.BACKLOOP_URL ? { backloop } : {}),
   // The demo fleet sends many reports from few keys; production APIs keep the default.
   rateLimit: { max: 1000, windowMs: 60_000 },
 });

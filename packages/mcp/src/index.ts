@@ -9,6 +9,8 @@ import {
   redact,
   validateSubmission,
   type AgentInfo,
+  type ChangeEntry,
+  type ChangesDocument,
   type FeedbackAck,
   type FeedbackRecord,
   type FeedbackSubmission,
@@ -19,6 +21,13 @@ import { feedbackInputShape } from "./shape.js";
 
 export { feedbackInputShape } from "./shape.js";
 export { createFeedbackProxyServer, type FeedbackProxyOptions } from "./proxy.js";
+export {
+  instrumentServer,
+  telemetryShape,
+  TELEMETRY_ARGUMENT,
+  type SessionAnalytics,
+  type SessionAnalyticsOptions,
+} from "./sessions.js";
 
 type ToolExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 
@@ -33,6 +42,50 @@ export interface RegisterFeedbackToolOptions {
   /** Tool name. Default `submit_feedback`. */
   name?: string;
   description?: string;
+  /**
+   * Your changelog for agents (spec §4.3), e.g. `changesFrom({ url, ingestKey })`. When set,
+   * a `recent_changes` tool and a `backloop://changes` resource tell agents what now works.
+   */
+  changes?: () => ChangesDocument | ChangeEntry[] | Promise<ChangesDocument | ChangeEntry[]>;
+}
+
+export const CHANGES_TOOL_NAME = "recent_changes";
+
+/**
+ * Add `recent_changes` and the `backloop://changes` resource: what this service fixed
+ * lately, so an agent that failed at a task before checks before giving up.
+ */
+export function registerChangesTool(
+  server: McpServer,
+  changes: NonNullable<RegisterFeedbackToolOptions["changes"]>,
+) {
+  const load = async (): Promise<ChangesDocument> => {
+    const out = await changes();
+    return Array.isArray(out) ? { changes: out } : out;
+  };
+  server.registerResource(
+    "changes",
+    "backloop://changes",
+    { title: "Recent fixes", description: "What this service fixed lately, newest first.", mimeType: "application/json" },
+    async (uri) => ({ contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(await load()) }] }),
+  );
+  return server.registerTool(
+    CHANGES_TOOL_NAME,
+    {
+      title: "Recent fixes",
+      description:
+        "What this service fixed or added lately, newest first, each with the endpoints or tools it concerns and a note from the team. " +
+        "Call it when a task failed or something seemed missing, before telling the user this service can't do it.",
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    async () => {
+      try {
+        return text(await load());
+      } catch (e) {
+        return text({ error: { code: "unavailable", message: `The changelog is unavailable: ${(e as Error).message}` } }, true);
+      }
+    },
+  );
 }
 
 function text(value: unknown, isError = false): CallToolResult {
@@ -57,6 +110,7 @@ export function clientAgent(server: McpServer): AgentInfo | undefined {
  *   registerFeedbackTool(server, { service: "acme", onRecord: forwardTo({ url, ingestKey }) });
  */
 export function registerFeedbackTool(server: McpServer, options: RegisterFeedbackToolOptions) {
+  if (options.changes) registerChangesTool(server, options.changes);
   return server.registerTool(
     options.name ?? FEEDBACK_TOOL_NAME,
     {

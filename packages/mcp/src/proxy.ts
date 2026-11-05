@@ -39,7 +39,7 @@ function text(value: unknown, isError = false): CallToolResult {
  */
 export function createFeedbackProxyServer(options: FeedbackProxyOptions = {}): McpServer {
   // MCP clients show server instructions to the model; agents report when they are told to.
-  const server = new McpServer({ name: "backloop-feedback", version: "0.1.5" }, { instructions: AGENT_FEEDBACK_INSTRUCTIONS });
+  const server = new McpServer({ name: "backloop-feedback", version: "0.2.0" }, { instructions: AGENT_FEEDBACK_INSTRUCTIONS });
   const clients = new Map<string, FeedbackClient>();
 
   async function clientFor(serviceUrl?: string): Promise<FeedbackClient> {

@@ -14,6 +14,8 @@ import {
   type FeedbackErrorCode,
   type FeedbackRecord,
   type FeedbackSource,
+  type ChangeEntry,
+  type ChangesDocument,
   type KnownIssue,
   type ValidationIssue,
 } from "./types.js";
@@ -45,6 +47,12 @@ export interface FeedbackHandlerOptions {
    */
   redact?: boolean | RedactOptions;
   maxBytes?: number;
+  /**
+   * Your changelog for agents (spec §4.3): what you fixed, so agents that failed before
+   * learn it works now. Served at `<endpoint>/changes` and linked from discovery.
+   * `changesFrom({ url, ingestKey })` serves the one Backloop keeps for you.
+   */
+  changes?: () => ChangesDocument | ChangeEntry[] | Promise<ChangesDocument | ChangeEntry[]>;
   /** Public URL of the feedback endpoint, for the discovery document. Default: derived from the request. */
   publicEndpoint?: string;
   /** Per-account (or per-IP) limit. Default 60 per minute. `false` disables it. */
@@ -63,6 +71,8 @@ export interface FeedbackHandler {
   submit(request: Request): Promise<Response>;
   /** Handle `GET /.well-known/agent-feedback` directly. */
   discovery(request: Request): Response;
+  /** Handle `GET /feedback/changes` directly: 404 without a `changes` option. */
+  changes(request: Request): Promise<Response>;
 }
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
@@ -144,12 +154,14 @@ export function createFeedbackHandler(options: FeedbackHandlerOptions): Feedback
     const base = new URL(request.url);
     const proto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
     if (proto === "https" || proto === "http") base.protocol = `${proto}:`;
+    const endpoint = options.publicEndpoint ?? new URL("/feedback", base).toString();
     const doc: DiscoveryDocument = {
       spec_version: SPEC_VERSION,
-      endpoint: options.publicEndpoint ?? new URL("/feedback", base).toString(),
+      endpoint,
       types: FEEDBACK_TYPES,
       max_bytes: maxBytes,
       auth,
+      ...(options.changes ? { changes: `${endpoint.replace(/\/+$/, "")}/changes` } : {}),
     };
     return new Response(JSON.stringify(doc), {
       status: 200,
@@ -223,11 +235,26 @@ export function createFeedbackHandler(options: FeedbackHandlerOptions): Feedback
     return new Response(JSON.stringify(ack), { status: 202, headers: JSON_HEADERS });
   }
 
+  async function changes(request: Request): Promise<Response> {
+    if (!options.changes) return errorResponse(404, "invalid_feedback", "This service publishes no changelog");
+    if (request.method !== "GET" && request.method !== "HEAD") return errorResponse(405, "method_not_allowed", "Use GET", undefined, { allow: "GET" });
+    try {
+      const out = await options.changes();
+      const doc: ChangesDocument = Array.isArray(out) ? { changes: out } : out;
+      return new Response(JSON.stringify(doc), { status: 200, headers: { ...JSON_HEADERS, "cache-control": "public, max-age=300" } });
+    } catch (e) {
+      console.error("[backloop] changelog unavailable", e);
+      return errorResponse(503, "unavailable", "The changelog is unavailable. Retry later.", undefined, { "retry-after": "60" });
+    }
+  }
+
   return {
     submit,
     discovery,
+    changes,
     async fetch(request: Request): Promise<Response> {
       const { pathname } = new URL(request.url);
+      if (/\/feedback\/changes\/?$/.test(pathname)) return changes(request);
       if (pathname.endsWith(WELL_KNOWN_PATH)) {
         return request.method === "GET" || request.method === "HEAD"
           ? discovery(request)

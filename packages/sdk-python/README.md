@@ -73,6 +73,36 @@ document = handler.discovery("https://api.example.com")
 
 `on_record(record)` stores or forwards each accepted record. Return `{"known_issue": {...}}` to pass a tracked issue back to the agent. If it raises, the agent gets `503`. Add `feedback_link_header()` as a `Link` header on your API's error responses so agents find the endpoint.
 
+## MCP servers: session analytics
+
+```sh
+pip install "backloop-sdk[mcp]"
+```
+
+```python
+from mcp.server.fastmcp import FastMCP  # or mcp.server.mcpserver.MCPServer (mcp 2.x), or fastmcp.FastMCP
+from backloop import instrument_server
+
+mcp = FastMCP("acme")
+analytics = instrument_server(mcp, url=BACKLOOP_URL, ingest_key=INGEST_KEY, service="acme-mcp")
+```
+
+Every tool call becomes a `tool_call` event (session, client, duration, ok or error, redacted previews of the input and result), sent in batches to `<url>/v1/sessions/events` from a background thread. Tools registered before or after the call are covered, sync or async. Each tool gets an optional `telemetry` argument the agent fills in (`user_intent`, `agent_thinking`, `user_frustration`, `agent_model`); it is removed before your function runs. Sending never raises into a tool: a failure logs one warning.
+
+Options: `identify=lambda ctx: ...` returns the pseudonymous account (may be async for async tools), `telemetry=False`, `redact=False`, `preview_chars=2000`, `flush_ms=1000`, `on_events=callable` for a sink of your own. Call `analytics.flush()` before a serverless function returns (it also runs at exit).
+
+## REST APIs: agent request analytics
+
+```python
+from backloop import record_requests
+
+app.add_middleware(record_requests, url=BACKLOOP_URL, ingest_key=INGEST_KEY, service="acme-api")  # FastAPI / Starlette
+app.wsgi_app = record_requests(app.wsgi_app, url=BACKLOOP_URL, ingest_key=INGEST_KEY)              # Flask
+application = record_requests(application, url=BACKLOOP_URL, ingest_key=INGEST_KEY)                # any ASGI or WSGI app
+```
+
+Each request from an AI agent becomes an `http_request` event: method, route template (FastAPI's route or Flask's rule, else the path with ids collapsed to `:id`), status, duration, the agent, and redacted previews of the query (or body) and response. `X-Agent-Session` or `Mcp-Session-Id` groups requests into a session. Browser and unknown traffic is skipped unless `agents_only=False`; `detect_agent(headers)` tells you what was detected (Claude-User, ChatGPT-User, claude-code, Cursor, the Anthropic and OpenAI SDKs, `X-Agent-Name`, `Signature-Agent`...). `/feedback`, `/health`, `/healthz` and `/.well-known/` are skipped by default (`skip=lambda path: ...`). Other options: `identify` and `route` (both get the ASGI scope or WSGI environ), `preview_chars=1000`, `redact`, `flush_ms`, `on_events`.
+
 ## Utilities
 
 ```python

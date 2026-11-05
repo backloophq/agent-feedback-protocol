@@ -1,0 +1,41 @@
+{
+  "name": "@backloop/audit",
+  "version": "0.1.0",
+  "description": "Agent-readiness audit for any public API or MCP server: a 0-100 score and the gaps that make AI agents fail.",
+  "license": "Apache-2.0",
+  "homepage": "https://trybackloop.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/backloophq/agent-feedback-protocol.git",
+    "directory": "packages/audit"
+  },
+  "bugs": "https://github.com/backloophq/agent-feedback-protocol/issues",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "backloop-audit": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.1",
+    "zod": "^4.6.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

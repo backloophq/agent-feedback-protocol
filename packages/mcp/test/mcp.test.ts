@@ -118,3 +118,23 @@ describe("createFeedbackProxyServer", () => {
     expect(textOf(result).error.code).toBe("unauthorized");
   });
 });
+
+describe("recent_changes", () => {
+  it("is registered with the feedback tool when a changelog is given", async () => {
+    const { McpServer } = await import("@modelcontextprotocol/sdk/server/mcp.js");
+    const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
+    const { InMemoryTransport } = await import("@modelcontextprotocol/sdk/inMemory.js");
+    const { registerFeedbackTool } = await import("../src/index.js");
+    const server = new McpServer({ name: "acme", version: "1" });
+    registerFeedbackTool(server, { onRecord: () => undefined, changes: () => [{ id: "cl_1", title: "Hiring filter", status: "fixed" }] });
+    const [a, b] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: "t", version: "1" });
+    await Promise.all([server.connect(b), client.connect(a)]);
+    const { tools } = await client.listTools();
+    expect(tools.map((t) => t.name).sort()).toEqual(["recent_changes", "submit_feedback"]);
+    const out = await client.callTool({ name: "recent_changes", arguments: {} });
+    expect(JSON.parse((out.content as Array<{ text: string }>)[0]!.text).changes[0].id).toBe("cl_1");
+    const res = await client.readResource({ uri: "backloop://changes" });
+    expect(res.contents[0]!.uri).toBe("backloop://changes");
+  });
+});

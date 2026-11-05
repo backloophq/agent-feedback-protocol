@@ -1,5 +1,5 @@
 import type { OnRecordResult } from "./server.js";
-import type { FeedbackRecord, IngestResponse } from "./types.js";
+import type { ChangesDocument, FeedbackRecord, IngestResponse } from "./types.js";
 
 export interface ForwardOptions {
   /** Collector base URL, e.g. `http://localhost:4700` (the reference collector) or the hosted platform. */
@@ -108,4 +108,31 @@ export function memorySink(): ((record: FeedbackRecord) => void) & { records: Fe
     records.push(record);
   };
   return Object.assign(sink, { records });
+}
+
+/**
+ * A `changes` source for `createFeedbackHandler`: the changelog Backloop keeps for your
+ * service (`GET <url>/v1/changes`), cached for `cacheMs` (default 5 minutes). A failed
+ * refresh keeps serving the last good copy.
+ */
+export function changesFrom(options: { url: string; ingestKey?: string; cacheMs?: number; fetch?: typeof fetch }): () => Promise<ChangesDocument> {
+  const fetchImpl = options.fetch ?? globalThis.fetch.bind(globalThis);
+  const endpoint = `${options.url.replace(/\/+$/, "")}/v1/changes`;
+  let cached: { at: number; doc: ChangesDocument } | undefined;
+  return async () => {
+    if (cached && Date.now() - cached.at < (options.cacheMs ?? 300_000)) return cached.doc;
+    try {
+      const res = await fetchImpl(endpoint, {
+        headers: options.ingestKey ? { authorization: `Bearer ${options.ingestKey}` } : {},
+        signal: AbortSignal.timeout(5_000),
+      });
+      if (!res.ok) throw new Error(`Backloop returned HTTP ${res.status}`);
+      const doc = (await res.json()) as ChangesDocument;
+      cached = { at: Date.now(), doc: { changes: Array.isArray(doc.changes) ? doc.changes : [] } };
+      return cached.doc;
+    } catch (e) {
+      if (cached) return cached.doc;
+      throw e;
+    }
+  };
 }

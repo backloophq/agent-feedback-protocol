@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "backloop-sdk"
-version = "0.1.5"
+version = "0.2.0"
 description = "Python SDK for the Agent Feedback Protocol: validate, send and receive structured feedback from AI agents."
 readme = "README.md"
 license = "Apache-2.0"
@@ -29,6 +29,7 @@ Issues = "https://github.com/backloophq/agent-feedback-protocol/issues"
 [project.optional-dependencies]
 fastapi = ["fastapi>=0.100"]
 flask = ["flask>=2.0"]
+mcp = ["mcp>=1.2"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/backloop"]

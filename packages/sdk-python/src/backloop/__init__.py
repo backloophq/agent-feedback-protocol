@@ -11,7 +11,9 @@ from .client import FeedbackClient, FeedbackError, SubmitResult, feedback_url_fr
 from .forward import ForwardError, MemorySink, fan_out, forward_to, memory_sink
 from .ids import hash_account, new_id
 from .integrations import fastapi_router, flask_blueprint
+from .mcp import SessionAnalytics, instrument_server
 from .redact import REDACTED, redact, redact_string
+from .requests_recorder import collapse_path, detect_agent, record_requests
 from .server import (
     FeedbackHandler,
     HandlerResponse,
@@ -45,7 +47,7 @@ from .validate import (
     validate_submission,
 )
 
-__version__ = "0.1.5"
+__version__ = "0.2.0"
 
 __all__ = [
     "ACK_SCHEMA",
@@ -60,6 +62,7 @@ __all__ = [
     "RECORD_SCHEMA",
     "REDACTED",
     "SPEC_VERSION",
+    "SessionAnalytics",
     "WELL_KNOWN_PATH",
     "AgentInfo",
     "DiscoveryDocument",
@@ -79,6 +82,8 @@ __all__ = [
     "ValidationIssue",
     "ValidationResult",
     "agent_from_user_agent",
+    "collapse_path",
+    "detect_agent",
     "error_response",
     "fan_out",
     "fastapi_router",
@@ -90,8 +95,10 @@ __all__ = [
     "format_issues",
     "forward_to",
     "hash_account",
+    "instrument_server",
     "memory_sink",
     "new_id",
+    "record_requests",
     "redact",
     "redact_string",
     "validate_ack",

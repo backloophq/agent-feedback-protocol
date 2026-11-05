@@ -23,6 +23,7 @@ the API in process and a generic `http_request` tool. The arms change one thing:
 | `docs-instructed` | The same docs, with the standard instructions at the end of `info.description` |
 | `link` | `Link: </feedback>; rel="agent-feedback"` on every error, as the spec says today |
 | `hint` | The Link header, plus a hint in the response body on errors, ignored parameters and empty searches |
+| `hint-instructed` | The same hint, carrying `AGENT_FEEDBACK_INSTRUCTIONS` |
 | `tool` | A `submit_feedback` tool, as an MCP server would expose it, without instructions |
 | `instructed` | The tool, plus `AGENT_FEEDBACK_INSTRUCTIONS` in the system prompt |
 
@@ -81,3 +82,19 @@ HTTP tools only return the body.
 - `docs-instructed` and the second `instructed` figure ran with the revised instructions ("even if you found a
   workaround", "before your final answer"): no worse, and at the ceiling for the strongest models. A revised tool
   description was tried too and dropped: GPT-5.4 went 10/15 → 15/15, but Sonnet 5/15 → 1/15 and mini 5/15 → 2/15.
+
+### Instructions in the response body, 2026-10-01
+
+60 runs, 5 trials per cell, $1.22. Does the body hint work when it carries the standard instructions instead of one
+sentence?
+
+| Arm | Claude Opus 5.5 | Claude Sonnet 5.5 | GPT-5.4 |
+|---|---|---|---|
+| `hint` (2026-09-30) | 0/15 | 0/15 | 0/15 |
+| `hint-instructed` | 5/15 | 5/15 | 1/15 |
+
+- Where agents saw it, it worked for Claude: the hint shows on errors, so only in `country-name`, where Opus and
+  Sonnet reported 5/5 and GPT-5.4 1/5. The one-sentence hint got 0/5 there on every model.
+- It never showed in `hiring-role` or `employee-count`: those gaps answer `200` with results, and no agent sent an
+  unsupported parameter or got an empty search. `docs-instructed` caught them; a body hint can't.
+- Every answer stayed right (60/60): the instructions in an error body didn't pull agents off their task.
